@@ -1,0 +1,7 @@
+- status [ref=e3]:
+  - generic [ref=e4]:
+    - img [ref=e6]
+    - generic [ref=e10]: HEADING TEXT
+    - generic [ref=e11]:
+      - progressbar
+    - generic [ref=e12]: Inking the illustrations…

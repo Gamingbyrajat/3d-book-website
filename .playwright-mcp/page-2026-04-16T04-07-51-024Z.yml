@@ -1,0 +1,35 @@
+- generic [ref=e2]:
+  - status:
+    - generic:
+      - generic:
+        - img
+      - generic: HEADING TEXT
+      - generic:
+        - progressbar
+      - generic: Opening the cover…
+  - generic:
+    - generic:
+      - generic:
+        - heading "Welcome" [level=2]
+        - paragraph: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+    - generic:
+      - generic:
+        - heading "The Experience" [level=2]
+        - paragraph: Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.
+    - generic:
+      - generic:
+        - heading "Visual Craft" [level=2]
+        - paragraph: Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
+  - navigation "Main navigation" [ref=e16]:
+    - generic [ref=e17]: HEADING TEXT
+    - generic [ref=e18]:
+      - link "Home" [ref=e19] [cursor=pointer]:
+        - /url: /
+      - link "Nav 1" [ref=e20] [cursor=pointer]:
+        - /url: /nav1
+      - link "Nav 2" [active] [ref=e21] [cursor=pointer]:
+        - /url: /nav2
+      - link "Nav 3" [ref=e22] [cursor=pointer]:
+        - /url: /nav3
+      - link "About" [ref=e23] [cursor=pointer]:
+        - /url: /about

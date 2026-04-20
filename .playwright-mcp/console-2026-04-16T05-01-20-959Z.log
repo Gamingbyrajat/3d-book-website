@@ -1,0 +1,43 @@
+[      82ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=d55730a6:14090
+[    1980ms] [WARNING] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ http://localhost:5173/@vite/client:509
+[   33791ms] [ERROR] React has detected a change in the order of Hooks called by %s. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://react.dev/link/rules-of-hooks
+
+   Previous render            Next render
+   ------------------------------------------------------
+%s   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ Page 1. useState                   useState
+2. useEffect                  useEffect
+3. useMemo                    useMemo
+4. useMemo                    useMemo
+5. useMemo                    useMemo
+6. undefined                  useMemo
+ @ http://localhost:5173/@vite/client:509
+[   33797ms] Error: Rendered more hooks than during the previous render.
+    at xe (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:3666:153)
+    at Vi (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:4158:13)
+    at Object.useMemo (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:7764:14)
+    at exports.useMemo (http://localhost:5173/node_modules/.vite/deps/react.js?v=7ba20b37:736:31)
+    at Page (http://localhost:5173/src/components/Book/Page.tsx?t=1776315660357:28:24)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:7465:13)
+    at It (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:3593:13)
+    at ks (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:4615:362)
+    at tt (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:4936:21)
+    at B (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:2445:55)
+[   33799ms] Error: Rendered more hooks than during the previous render.
+    at xe (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:3666:153)
+    at Vi (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:4158:13)
+    at Object.useMemo (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:7764:14)
+    at exports.useMemo (http://localhost:5173/node_modules/.vite/deps/react.js?v=7ba20b37:736:31)
+    at Page (http://localhost:5173/src/components/Book/Page.tsx?t=1776315660357:28:24)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:7465:13)
+    at It (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:3593:13)
+    at ks (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:4615:362)
+    at tt (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:4936:21)
+    at B (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:2445:55)
+[   33798ms] [WARNING] %s
+
+%s
+ An error occurred in the <CanvasImpl> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/@vite/client:509
+[   34303ms] [LOG] THREE.WebGLRenderer: Context Lost. @ http://localhost:5173/node_modules/.vite/deps/three.module-BtZcz66E.js?v=03bf4acf:1694
+[   82807ms] [WARNING] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ http://localhost:5173/@vite/client:509

@@ -1,0 +1,31 @@
+[      66ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=d55730a6:14090
+[    1966ms] [WARNING] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ http://localhost:5173/@vite/client:509
+[    2117ms] ReferenceError: coverImage is not defined
+    at renderPageToCanvas (http://localhost:5173/src/hooks/usePageTexture.ts?t=1776314390310:62:28)
+    at http://localhost:5173/src/hooks/usePageTexture.ts?t=1776314390310:205:18
+    at Vi (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:4162:13)
+    at Object.useMemo (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:7764:14)
+    at exports.useMemo (http://localhost:5173/node_modules/.vite/deps/react.js?v=7ba20b37:736:31)
+    at usePageTexture (http://localhost:5173/src/hooks/usePageTexture.ts?t=1776314390310:203:18)
+    at Flap (http://localhost:5173/src/components/Book/Flap.tsx?t=1776314390310:14:23)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:7465:13)
+    at It (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:3593:13)
+    at ks (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:4615:362)
+[    2122ms] ReferenceError: coverImage is not defined
+    at renderPageToCanvas (http://localhost:5173/src/hooks/usePageTexture.ts?t=1776314390310:62:28)
+    at http://localhost:5173/src/hooks/usePageTexture.ts?t=1776314390310:205:18
+    at Vi (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:4162:13)
+    at Object.useMemo (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:7764:14)
+    at exports.useMemo (http://localhost:5173/node_modules/.vite/deps/react.js?v=7ba20b37:736:31)
+    at usePageTexture (http://localhost:5173/src/hooks/usePageTexture.ts?t=1776314390310:203:18)
+    at Flap (http://localhost:5173/src/components/Book/Flap.tsx?t=1776314390310:14:23)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:7465:13)
+    at It (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:3593:13)
+    at ks (http://localhost:5173/node_modules/.vite/deps/react-three-fiber.esm-4d3e4zwU.js?v=03bf4acf:4615:362)
+[    2120ms] [WARNING] %s
+
+%s
+ An error occurred in the <CanvasImpl> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/@vite/client:509
+[    2625ms] [LOG] THREE.WebGLRenderer: Context Lost. @ http://localhost:5173/node_modules/.vite/deps/three.module-BtZcz66E.js?v=03bf4acf:1694
+[   51288ms] [WARNING] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ http://localhost:5173/@vite/client:509

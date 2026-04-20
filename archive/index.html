@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Interactive Book</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <!-- A container that allows native scrolling -->
+    <div id="scroll-container" class="scroll-container">
+        <!-- JS will inject child sections here to create scroll height -->
+    </div>
+
+    <!-- The 3D scene fixed to the screen -->
+    <div class="viewport-container">
+        <div class="scene">
+            <div class="book" id="book">
+                
+                <!-- Left flat resting page -->
+                <div class="page page-left" id="page-left">
+                    <div class="page-content" id="content-left"></div>
+                </div>
+
+                <!-- Right flat resting page -->
+                <div class="page page-right" id="page-right">
+                    <div class="page-content" id="content-right"></div>
+                </div>
+
+                <!-- The actively flipping flap -->
+                <div class="page flap" id="flap">
+                    <div class="face front" id="flap-front">
+                        <div class="page-content" id="content-flap-front"></div>
+                    </div>
+                    <div class="face back" id="flap-back">
+                        <div class="page-content" id="content-flap-back"></div>
+                    </div>
+                </div>
+
+                <!-- Visual spine in the middle -->
+                <div class="book-spine"></div>
+                
+            </div>
+            
+            <!-- A shadow layer underlying the book -->
+            <div class="book-shadow"></div>
+        </div>
+    </div>
+
+    <div class="status-overlay">
+        Scroll gradually to turn the pages.
+    </div>
+
+    <script type="module" src="js/audio.js"></script>
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

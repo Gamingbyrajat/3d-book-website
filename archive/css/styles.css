@@ -1,0 +1,229 @@
+/* css/styles.css */
+:root {
+    --bg-color: #f0ebe1;
+    --paper-color: #FDFBF7;
+    --cover-color: #2b303a;
+    --text-color: #333333;
+    --cover-text: #e8dcc5;
+    
+    --book-width: 80vw;
+    --book-height: 75vh;
+    --max-book-width: 1200px;
+    --max-book-height: 800px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-color);
+    font-family: 'Inter', sans-serif;
+    color: var(--text-color);
+    overflow: hidden; /* We scroll the scroll-container instead */
+}
+
+/* Scroll Container is absolutely positioned to take user scroll events */
+.scroll-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-snap-type: y mandatory;
+    z-index: 10;
+}
+
+/* Dummy sections for snapping */
+.scroll-section {
+    width: 100%;
+    height: 100vh;
+    scroll-snap-align: start;
+}
+
+/* Viewport for the 3D book, absolutely positioned behind the scroll container */
+.viewport-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    perspective: 2500px; /* Gives the 3D depth */
+    z-index: 1; /* Below the scroll container so we can scroll */
+    pointer-events: none; /* Let scroll events pass through */
+}
+
+.scene {
+    width: min(var(--book-width), var(--max-book-width));
+    height: min(var(--book-height), var(--max-book-height));
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(15deg) rotateY(0deg); /* Slight top-down desk perspective */
+}
+
+.book {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    border-radius: 8px;
+}
+
+.book-shadow {
+    position: absolute;
+    top: 5%;
+    left: 0;
+    width: 100%;
+    height: 95%;
+    background: rgba(0,0,0,0.2);
+    filter: blur(20px);
+    transform: translateZ(-50px); /* Push shadow behind book */
+    border-radius: 20px;
+}
+
+/* Generic page structure */
+.page {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    background-color: var(--paper-color);
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+}
+
+/* Static Left Page */
+.page-left {
+    left: 0;
+    border-radius: 8px 0 0 8px;
+    box-shadow: inset -10px 0 20px rgba(0,0,0,0.05); /* Spine shadow */
+    border: 1px solid #e0dfd5;
+    border-right: none;
+}
+
+/* Static Right Page */
+.page-right {
+    right: 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: inset 10px 0 20px rgba(0,0,0,0.05); /* Spine shadow */
+    border: 1px solid #e0dfd5;
+    border-left: none;
+}
+
+/* The Flap that rotates */
+.flap {
+    right: 0;
+    transform-origin: left center; /* Pivot exactly at the center spine */
+    background: transparent;
+    z-index: 5;
+    will-change: transform;
+    /* transition: transform 0.1s linear;  We animate this via JS, transition causes lag if tied to scroll */
+}
+
+/* The faces of the rotating flap */
+.face {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    background-color: var(--paper-color);
+    border-radius: 0 8px 8px 0;
+    border: 1px solid #e0dfd5;
+    border-left: none;
+    overflow: hidden;
+}
+
+.face.front {
+    transform: rotateY(0deg);
+    box-shadow: inset 10px 0 20px rgba(0,0,0,0.05), -10px 0 15px rgba(0,0,0,0.1);
+}
+
+.face.back {
+    transform: rotateY(180deg);
+    border-radius: 8px 0 0 8px;
+    border-left: 1px solid #e0dfd5;
+    border-right: none;
+    box-shadow: inset -10px 0 20px rgba(0,0,0,0.05), 10px 0 15px rgba(0,0,0,0.1);
+}
+
+/* Book Cover Modifiers */
+.is-cover {
+    background-color: var(--cover-color) !important;
+    color: var(--cover-text) !important;
+    border: none !important;
+    box-shadow: inset 15px 0 30px rgba(0,0,0,0.5) !important;
+}
+
+.is-cover.face.back {
+    box-shadow: inset -15px 0 30px rgba(0,0,0,0.5) !important;
+}
+
+/* Center Binding / Spine Visual */
+.book-spine {
+    position: absolute;
+    left: 50%;
+    top: 2%;
+    bottom: 2%;
+    width: 4px;
+    background: linear-gradient(to right, rgba(0,0,0,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(0,0,0,0.3) 100%);
+    transform: translateX(-50%);
+    z-index: 6;
+    border-radius: 2px;
+}
+
+/* Content Layout inside pages */
+.page-content {
+    padding: 10%;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.page-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+}
+
+p.page-body {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: inherit;
+    opacity: 0.8;
+}
+
+.page-image {
+    width: 100%;
+    height: 40%;
+    margin-top: 2rem;
+    background-size: cover;
+    background-position: center;
+    border-radius: 4px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.status-overlay {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    pointer-events: none;
+    z-index: 100;
+}

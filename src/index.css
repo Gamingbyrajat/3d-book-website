@@ -1,0 +1,125 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #f0ebe1;
+  --paper: #FDFBF7;
+  --cover: #2b303a;
+  --text: #333333;
+  --cover-text: #e8dcc5;
+  --spine: #1a1d24;
+}
+
+html, body {
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+  background-color: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100%;
+}
+
+/* Scroll spacer — creates document height for Lenis to scroll */
+.scroll-spacer {
+  width: 100%;
+  pointer-events: none;
+}
+
+/* ===== NAVBAR ===== */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 2.5rem;
+  pointer-events: auto;
+  background: linear-gradient(to bottom, rgba(240, 235, 225, 0.95) 0%, rgba(240, 235, 225, 0) 100%);
+}
+
+.navbar-brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--cover);
+}
+
+.navbar-links {
+  display: flex;
+  gap: 2rem;
+}
+
+.navbar-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  color: rgba(43, 48, 58, 0.6);
+  transition: color 0.3s ease, opacity 0.3s ease;
+  text-transform: uppercase;
+}
+
+.navbar-link:hover {
+  color: var(--cover);
+}
+
+.navbar-link.active {
+  color: var(--cover);
+  font-weight: 500;
+}
+
+/* Text is now rendered as 3D mesh textures — no CSS overlay needed */
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 1rem 1.2rem;
+  }
+
+  .navbar-links {
+    gap: 1rem;
+  }
+
+  .navbar-link {
+    font-size: 0.75rem;
+  }
+
+}
+
+/* ===== SR ONLY ===== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
