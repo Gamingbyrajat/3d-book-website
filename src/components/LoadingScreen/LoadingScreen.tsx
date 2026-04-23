@@ -1,11 +1,11 @@
-import { useBookStore } from '../../store';
-import './LoadingScreen.css';
+import { useBookStore } from "../../store";
+import "./LoadingScreen.css";
 
 const FLAVOR_TEXT = [
-  'Binding the pages\u2026',
-  'Inking the illustrations\u2026',
-  'Warming the light\u2026',
-  'Opening the cover\u2026',
+  "Initializing vault...",
+  "Encrypting connections...",
+  "Preparing commands...",
+  "Ready to park.",
 ];
 
 function getFlavorText(progress: number): string {
@@ -21,7 +21,7 @@ export function LoadingScreen() {
 
   return (
     <div
-      className={`loading-screen ${isBooted ? 'fade-out' : ''}`}
+      className={`loading-screen ${isBooted ? "fade-out" : ""}`}
       role="status"
       aria-live="polite"
     >
@@ -29,14 +29,40 @@ export function LoadingScreen() {
         {/* SVG Book silhouette with page flutter */}
         <div className="loading-book-icon">
           <svg viewBox="0 0 80 100" className="book-silhouette">
-            <rect x="5" y="5" width="70" height="90" rx="3" fill="#FDFBF7" stroke="#c5bfb3" strokeWidth="1.5" />
-            <rect x="5" y="5" width="70" height="90" rx="3" fill="none" stroke="#2b303a" strokeWidth="0.5" opacity="0.3" />
-            <line x1="40" y1="8" x2="40" y2="92" stroke="#d4cfc5" strokeWidth="1" />
+            <rect
+              x="5"
+              y="5"
+              width="70"
+              height="90"
+              rx="3"
+              fill="#FDFBF7"
+              stroke="#c5bfb3"
+              strokeWidth="1.5"
+            />
+            <rect
+              x="5"
+              y="5"
+              width="70"
+              height="90"
+              rx="3"
+              fill="none"
+              stroke="#2b303a"
+              strokeWidth="0.5"
+              opacity="0.3"
+            />
+            <line
+              x1="40"
+              y1="8"
+              x2="40"
+              y2="92"
+              stroke="#d4cfc5"
+              strokeWidth="1"
+            />
           </svg>
           <div className="flutter-page" />
         </div>
 
-        <div className="loading-brand">HEADING TEXT</div>
+        <div className="loading-brand">Repo Parking Package</div>
 
         <div className="loading-progress-track">
           <div
