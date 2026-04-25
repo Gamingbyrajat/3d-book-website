@@ -6,6 +6,8 @@ const STORAGE_KEY = 'repo-parking-book-progress';
 interface BookStore {
   progress: number;
   spreadIndex: number;
+  /** Spread used for page/flap textures and flap guard; equals floor(progress) except when prefersReducedMotion (then rounded). */
+  displaySpreadIndex: number;
   foldProgress: number;
   isAnimating: boolean;
   isBooted: boolean;
@@ -24,9 +26,10 @@ interface BookStore {
   setPrefersReducedMotion: (v: boolean) => void;
 }
 
-export const useBookStore = create<BookStore>((set) => ({
+export const useBookStore = create<BookStore>((set, get) => ({
   progress: 0,
   spreadIndex: 0,
+  displaySpreadIndex: 0,
   foldProgress: 0,
   isAnimating: false,
   isBooted: false,
@@ -40,8 +43,12 @@ export const useBookStore = create<BookStore>((set) => ({
     const spreadIndex = Math.floor(clamped);
     const maxSpread = numSpreads - 1;
     const foldProgress = spreadIndex >= maxSpread ? 0 : clamped - spreadIndex;
+    const prefersRM = get().prefersReducedMotion;
+    const displaySpreadIndex = prefersRM
+      ? Math.min(maxSpread, Math.max(0, Math.round(clamped)))
+      : spreadIndex;
 
-    set({ progress: clamped, spreadIndex, foldProgress });
+    set({ progress: clamped, spreadIndex, displaySpreadIndex, foldProgress });
   },
 
   setAnimating: (v) => set({ isAnimating: v }),
@@ -49,7 +56,15 @@ export const useBookStore = create<BookStore>((set) => ({
   setBootProgress: (v) => set({ bootProgress: v }),
   setGpuWarmupStarted: (v) => set({ gpuWarmupStarted: v }),
   setShaderWarmed: (v) => set({ shaderWarmed: v }),
-  setPrefersReducedMotion: (v) => set({ prefersReducedMotion: v }),
+  setPrefersReducedMotion: (v) => {
+    set((s) => {
+      const maxSpread = numSpreads - 1;
+      const displaySpreadIndex = v
+        ? Math.min(maxSpread, Math.max(0, Math.round(s.progress)))
+        : s.spreadIndex;
+      return { prefersReducedMotion: v, displaySpreadIndex };
+    });
+  },
 }));
 
 export function readSavedBookProgress(): number | null {

@@ -14,10 +14,40 @@ interface FlapProps {
   reactSpreadIndex: number;
 }
 
+/** Same bend angle as vertex deformation; uses `position` (attribute) so it can run in normal_vertex before displacement. */
+function bendAngleFromPosition(pw: number, bh: number): string {
+  return `
+        float n_xN = (position.x + ${(pw / 2).toFixed(6)}) / ${pw.toFixed(6)};
+        float n_yN = (position.y + ${(bh / 2).toFixed(6)}) / ${bh.toFixed(6)};
+        float n_cornerDelay = n_yN * 0.22;
+        float n_localFold = clamp((uFold - n_cornerDelay) / max(1.0 - n_cornerDelay, 0.01), 0.0, 1.0);
+        float n_bend = n_localFold * 3.14159265;
+`;
+}
+
+/** Cylinder about vertical axis through hinge x = -pw/2: N ∝ (-sin(bend), 0, cos(bend)) in object space. */
+function bentNormalVertexBlock(pw: number, bh: number): string {
+  return `
+#ifndef FLAT_SHADED
+        ${bendAngleFromPosition(pw, bh)}
+        vec3 bentObjectNormal = normalize(vec3(-sin(n_bend), 0.0, cos(n_bend)));
+#ifdef FLIP_SIDED
+        bentObjectNormal = -bentObjectNormal;
+#endif
+        vNormal = normalize(normalMatrix * bentObjectNormal);
+#ifdef USE_TANGENT
+        vTangent = normalize( transformedTangent );
+        vBitangent = normalize( cross( vNormal, vTangent ) * tangent.w );
+#endif
+#endif
+`;
+}
+
 function bendVertexBlock(pw: number, bh: number): string {
   return `
         float xN = (position.x + ${(pw / 2).toFixed(6)}) / ${pw.toFixed(6)};
         float yN = (position.y + ${(bh / 2).toFixed(6)}) / ${bh.toFixed(6)};
+        float hingeWeight = smoothstep(0.0, 0.18, xN);
 
         float cornerDelay = yN * 0.22;
         float localFold = clamp((uFold - cornerDelay) / max(1.0 - cornerDelay, 0.01), 0.0, 1.0);
@@ -25,32 +55,31 @@ function bendVertexBlock(pw: number, bh: number): string {
         float bend = localFold * 3.14159265;
         float dist = position.x + ${(pw / 2).toFixed(6)};
 
-        float bendScale = mix(1.0, 0.9, localFold);
-        transformed.x = (cos(bend) * dist - ${(pw / 2).toFixed(6)}) * bendScale;
-        transformed.z = sin(bend) * dist * bendScale;
+        transformed.x = cos(bend) * dist - ${(pw / 2).toFixed(6)};
+        transformed.z = sin(bend) * dist;
 
         float curlEnvelope = sin(localFold * 3.14159265);
-        float curlStrength = (0.088 + 0.058 * (1.0 - yN)) * (0.62 + 0.38 * curlEnvelope);
+        float curlStrength = (0.088 + 0.058 * (1.0 - yN)) * (0.62 + 0.38 * curlEnvelope) * hingeWeight;
         float curlWave = sin(xN * 3.14159265);
         transformed.z += sin(bend) * curlStrength * curlWave;
 
-        float cornerLift = curlEnvelope * 0.038 * (1.0 - yN) * xN;
+        float cornerLift = curlEnvelope * 0.038 * (1.0 - yN) * xN * hingeWeight;
         transformed.z += cornerLift;
 
-        float warpAmp = 0.0035 * curlEnvelope;
+        float warpAmp = 0.0035 * curlEnvelope * hingeWeight;
         float warpPhase = bend * 1.12 + xN * 21.0 + yN * 14.0;
         transformed.z += warpAmp * sin(warpPhase);
-        transformed.y += warpAmp * 0.5 * sin(xN * 18.5 + yN * 10.5 + bend);
+        transformed.y += warpAmp * 0.5 * sin(xN * 18.5 + yN * 10.5 + bend) * hingeWeight;
 `;
 }
 
-function createFoldMaterial(pw: number, bh: number, backFace: boolean): THREE.MeshStandardMaterial {
+function createFoldMaterial(pw: number, bh: number, _backFace: boolean): THREE.MeshStandardMaterial {
   const mat = new THREE.MeshStandardMaterial({
     color: '#ffffff',
     roughness: 0.91,
     metalness: 0.02,
     envMapIntensity: 0.95,
-    side: backFace ? THREE.BackSide : THREE.FrontSide,
+    side: _backFace ? THREE.BackSide : THREE.FrontSide,
   });
 
   mat.onBeforeCompile = (shader) => {
@@ -58,6 +87,12 @@ function createFoldMaterial(pw: number, bh: number, backFace: boolean): THREE.Me
     mat.userData.foldShader = shader;
 
     shader.vertexShader = 'uniform float uFold;\n' + shader.vertexShader;
+
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <normal_vertex>',
+      bentNormalVertexBlock(pw, bh),
+    );
+
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
       `
@@ -115,7 +150,7 @@ export function Flap({ bookWidth, bookHeight, frontPage, backPage, reactSpreadIn
 
   useFrame(() => {
     const store = useBookStore.getState();
-    const storeSpread = store.spreadIndex;
+    const storeSpread = store.displaySpreadIndex;
     const prefersRM = store.prefersReducedMotion;
 
     type FoldShader = { uniforms?: { uFold?: { value: number } } };
@@ -135,7 +170,6 @@ export function Flap({ bookWidth, bookHeight, frontPage, backPage, reactSpreadIn
     }
 
     if (frontShader?.uniforms?.uFold) {
-      // WebGL uniform — imperative Three.js, not React render state
       // eslint-disable-next-line react-hooks/immutability -- uFold drives bend; must update every frame
       frontShader.uniforms.uFold.value = foldValue;
     }
@@ -161,20 +195,8 @@ export function Flap({ bookWidth, bookHeight, frontPage, backPage, reactSpreadIn
 
   return (
     <group position={[pageWidth / 2, 0, zPos]}>
-      <mesh
-        geometry={geometry}
-        material={frontMat}
-        position={[0, 0, 0.00025]}
-        castShadow
-        receiveShadow
-      />
-      <mesh
-        geometry={geometry}
-        material={backMat}
-        position={[0, 0, -0.00025]}
-        castShadow
-        receiveShadow
-      />
+      <mesh geometry={geometry} material={frontMat} position={[0, 0, 0.00025]} receiveShadow />
+      <mesh geometry={geometry} material={backMat} position={[0, 0, -0.00025]} receiveShadow />
     </group>
   );
 }

@@ -10,13 +10,7 @@ const BOOK_HEIGHT = 3.6;
 const SPINE_THICKNESS = 0.04;
 
 export function Book() {
-  const progress = useBookStore((s) => s.progress);
-  const spreadIndexStore = useBookStore((s) => s.spreadIndex);
-  const prefersReducedMotion = useBookStore((s) => s.prefersReducedMotion);
-
-  const spreadIndex = prefersReducedMotion
-    ? Math.min(numSpreads - 1, Math.max(0, Math.round(progress)))
-    : spreadIndexStore;
+  const spreadIndex = useBookStore((s) => s.displaySpreadIndex);
 
   const idxLeftFlat = spreadIndex * 2 - 1;
   const idxFlapFront = spreadIndex * 2;

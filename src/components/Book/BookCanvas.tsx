@@ -19,13 +19,14 @@ function SceneLights() {
         intensity={1.05}
         color="#fff5e6"
         shadow-mapSize={[1024, 1024]}
-        shadow-camera-far={28}
-        shadow-camera-near={1}
-        shadow-camera-left={-7}
-        shadow-camera-right={7}
-        shadow-camera-top={7}
-        shadow-camera-bottom={-7}
-        shadow-bias={-0.00025}
+        shadow-camera-far={18}
+        shadow-camera-near={3}
+        shadow-camera-left={-3.8}
+        shadow-camera-right={3.8}
+        shadow-camera-top={3.2}
+        shadow-camera-bottom={-3.6}
+        shadow-bias={-0.00008}
+        shadow-normalBias={0.04}
       />
       <directionalLight position={[-3.5, 3, 2.5]} intensity={0.32} color="#d4e4ff" />
       <directionalLight position={[0, -2, 4]} intensity={0.12} color="#f0ebe1" />

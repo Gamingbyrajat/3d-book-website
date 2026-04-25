@@ -13,13 +13,7 @@ function findRouteForSpread(spread: number): string | null {
 }
 
 export function BookProgressIndicator() {
-  const progress = useBookStore((s) => s.progress);
-  const spreadFloor = useBookStore((s) => s.spreadIndex);
-  const prefersRM = useBookStore((s) => s.prefersReducedMotion);
-
-  const displaySpread = prefersRM
-    ? Math.min(numSpreads - 1, Math.max(0, Math.round(progress)))
-    : spreadFloor;
+  const displaySpread = useBookStore((s) => s.displaySpreadIndex);
 
   return (
     <div className="book-progress-indicator" aria-hidden="true">
