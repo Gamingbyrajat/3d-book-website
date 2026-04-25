@@ -1,9 +1,16 @@
-import { useMemo, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { pages as allPages, type Page } from '../content/pages';
+import { getBookQualityTier } from './useBookQuality';
 
-const TEX_WIDTH = 1024;
-const TEX_HEIGHT = 1400;
+function getTexDimensions(): { w: number; h: number } {
+  const tier = typeof window === 'undefined' ? 'high' : getBookQualityTier();
+  if (tier === 'high') return { w: 1024, h: 1400 };
+  if (tier === 'medium') return { w: 896, h: 1225 };
+  return { w: 768, h: 1050 };
+}
+
+let TEX_WIDTH = 1024;
+let TEX_HEIGHT = 1400;
 const PADDING = 100;
 
 const PAPER_COLOR = '#FDFBF7';
@@ -286,6 +293,10 @@ export async function preRenderAllTextures(): Promise<void> {
   if (texturesReadyPromise) return texturesReadyPromise;
 
   texturesReadyPromise = (async () => {
+    const dim = getTexDimensions();
+    TEX_WIDTH = dim.w;
+    TEX_HEIGHT = dim.h;
+
     // 1. Load all images first
     const imageSrcs = new Set<string>();
     imageSrcs.add('/images/cover-front.png');

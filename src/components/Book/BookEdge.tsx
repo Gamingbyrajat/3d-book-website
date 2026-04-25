@@ -16,7 +16,6 @@ export function BookEdge({ bookWidth, bookHeight }: BookEdgeProps) {
   const pageWidth = bookWidth / 2;
   const thickness = 0.08;
 
-  const isLastSpread = spreadIndex >= numSpreads - 1;
   const isSecondToLast = spreadIndex >= numSpreads - 2;
 
   const backCoverGeo = useMemo(

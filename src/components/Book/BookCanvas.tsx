@@ -1,9 +1,41 @@
+import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
+import { Environment, ContactShadows } from '@react-three/drei';
+import * as THREE from 'three';
 import { Book } from './Book';
 import { BookShadow } from './BookShadow';
-import * as THREE from 'three';
+import { ShaderWarmup } from './ShaderWarmup';
+import { PaperRustleDriver } from './PaperRustleDriver';
+import { useBookQuality } from '../../hooks/useBookQuality';
+
+function SceneLights() {
+  return (
+    <>
+      <ambientLight intensity={0.42} />
+      <hemisphereLight intensity={0.22} groundColor="#c9bfb0" color="#fff8ef" />
+      <directionalLight
+        castShadow
+        position={[4.5, 7, 5.5]}
+        intensity={1.05}
+        color="#fff5e6"
+        shadow-mapSize={[1024, 1024]}
+        shadow-camera-far={28}
+        shadow-camera-near={1}
+        shadow-camera-left={-7}
+        shadow-camera-right={7}
+        shadow-camera-top={7}
+        shadow-camera-bottom={-7}
+        shadow-bias={-0.00025}
+      />
+      <directionalLight position={[-3.5, 3, 2.5]} intensity={0.32} color="#d4e4ff" />
+      <directionalLight position={[0, -2, 4]} intensity={0.12} color="#f0ebe1" />
+    </>
+  );
+}
 
 export function BookCanvas() {
+  const { dprCap, useContactShadows } = useBookQuality();
+
   return (
     <div
       style={{
@@ -17,28 +49,45 @@ export function BookCanvas() {
       }}
     >
       <Canvas
+        shadows
         gl={{
           antialias: true,
           powerPreference: 'high-performance',
-          toneMapping: THREE.LinearToneMapping,
-          toneMappingExposure: 1.0,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 0.88,
         }}
-        dpr={[1, 2]}
+        dpr={[1, dprCap]}
         camera={{
-          position: [0, 0, 5],
+          position: [0, 0.15, 5],
           fov: 45,
           near: 0.1,
           far: 100,
         }}
         frameloop="always"
       >
-        <ambientLight intensity={3.2} />
-        <directionalLight position={[0, 0, 5]} intensity={1.5} />
-        <directionalLight position={[3, 2, 4]} intensity={0.5} />
-        <directionalLight position={[-3, -1, 3]} intensity={0.2} />
-
+        <SceneLights />
+        <Suspense fallback={null}>
+          <Environment preset="apartment" environmentIntensity={0.52} />
+        </Suspense>
         <Book />
-        <BookShadow />
+        {useContactShadows ? (
+          <Suspense fallback={null}>
+            <ContactShadows
+              position={[0.1, -2.05, 0.1]}
+              opacity={0.38}
+              scale={14}
+              blur={2.1}
+              far={5.5}
+              resolution={512}
+              frames={1}
+              color="#1a1410"
+            />
+          </Suspense>
+        ) : (
+          <BookShadow />
+        )}
+        <ShaderWarmup />
+        <PaperRustleDriver />
       </Canvas>
     </div>
   );

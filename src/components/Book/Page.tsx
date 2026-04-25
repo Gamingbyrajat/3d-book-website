@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import * as THREE from 'three';
 import { usePageTexture } from '../../hooks/usePageTexture';
 import type { Page as PageType } from '../../content/pages';
@@ -21,33 +21,54 @@ export function Page({ side, bookWidth, bookHeight, page, visible = true }: Page
 
   const geometry = useMemo(
     () => new THREE.PlaneGeometry(pageWidth, bookHeight, 1, 1),
-    [pageWidth, bookHeight]
+    [pageWidth, bookHeight],
   );
 
   const material = useMemo(() => {
-    return new THREE.MeshBasicMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: '#ffffff',
+      roughness: 0.92,
+      metalness: 0.02,
+      envMapIntensity: 0.85,
       side: THREE.FrontSide,
     });
-  }, []);
+    mat.map = texture ?? null;
+    if (isCover) {
+      mat.emissive = new THREE.Color('#1a1510');
+      mat.emissiveIntensity = 0.05;
+    }
+    mat.needsUpdate = true;
+    return mat;
+  }, [texture, isCover]);
 
   const edgeBottomGeo = useMemo(
     () => new THREE.PlaneGeometry(pageWidth, COVER_THICKNESS),
-    [pageWidth]
+    [pageWidth],
   );
   const edgeSideGeo = useMemo(
     () => new THREE.PlaneGeometry(COVER_THICKNESS, bookHeight),
-    [bookHeight]
+    [bookHeight],
   );
   const edgeMat = useMemo(
-    () => new THREE.MeshBasicMaterial({ color: COVER_EDGE_COLOR, side: THREE.DoubleSide }),
-    []
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: COVER_EDGE_COLOR,
+        roughness: 0.88,
+        metalness: 0.05,
+        side: THREE.DoubleSide,
+      }),
+    [],
   );
 
-  if (texture) {
-    material.map = texture;
-    material.needsUpdate = true;
-  }
+  useEffect(() => {
+    return () => {
+      material.dispose();
+      edgeMat.dispose();
+      geometry.dispose();
+      edgeBottomGeo.dispose();
+      edgeSideGeo.dispose();
+    };
+  }, [material, edgeMat, geometry, edgeBottomGeo, edgeSideGeo]);
 
   if (!visible) return null;
 
@@ -59,6 +80,8 @@ export function Page({ side, bookWidth, bookHeight, page, visible = true }: Page
         geometry={geometry}
         material={material}
         position={[xOffset, 0, isCover ? 0.003 : 0]}
+        castShadow
+        receiveShadow
       />
 
       {isCover && (
