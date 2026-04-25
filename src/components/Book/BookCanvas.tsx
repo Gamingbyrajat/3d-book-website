@@ -59,7 +59,7 @@ export function BookCanvas() {
         }}
         dpr={[1, dprCap]}
         camera={{
-          position: [0, 0.15, 5],
+          position: [0, 0.12, 5.7],
           fov: 45,
           near: 0.1,
           far: 100,

@@ -15,6 +15,13 @@ function getFlavorText(progress: number): string {
   return FLAVOR_TEXT[3];
 }
 
+function getPhase(progress: number): "phase-1" | "phase-2" | "phase-3" | "phase-4" {
+  if (progress < 0.3) return "phase-1";
+  if (progress < 0.7) return "phase-2";
+  if (progress < 0.95) return "phase-3";
+  return "phase-4";
+}
+
 export function LoadingScreen() {
   const isBooted = useBookStore((s) => s.isBooted);
   const bootProgress = useBookStore((s) => s.bootProgress);
@@ -25,7 +32,7 @@ export function LoadingScreen() {
       role="status"
       aria-live="polite"
     >
-      <div className="loading-content">
+      <div className={`loading-content ${getPhase(bootProgress)}`}>
         {/* SVG Book silhouette with page flutter */}
         <div className="loading-book-icon">
           <svg viewBox="0 0 80 100" className="book-silhouette">
@@ -62,7 +69,10 @@ export function LoadingScreen() {
           <div className="flutter-page" />
         </div>
 
-        <div className="loading-brand">Repo Parking Package</div>
+        <div className="loading-brand-wrap">
+          <div className="loading-brand-kicker">Interactive Edition</div>
+          <div className="loading-brand">Repo Parking Package</div>
+        </div>
 
         <div className="loading-progress-track">
           <div
@@ -75,7 +85,9 @@ export function LoadingScreen() {
           />
         </div>
 
-        <div className="loading-flavor">{getFlavorText(bootProgress)}</div>
+        <div className="loading-flavor" key={getFlavorText(bootProgress)}>
+          {getFlavorText(bootProgress)}
+        </div>
       </div>
     </div>
   );

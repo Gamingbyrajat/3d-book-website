@@ -15,7 +15,7 @@ const PADDING = 100;
 
 const PAPER_COLOR = "#FDFBF7";
 const COVER_COLOR = "#2b303a";
-/** Front/back cover hero art (was cover-front.png; use a shipped asset under public/). */
+/** Front/back cover hero art; kept in public/ for preload + canvas texture generation. */
 const COVER_ART_SRC = "/images/cover-front.png";
 const TEXT_COLOR = "#333333";
 const COVER_TEXT_COLOR = "#e8dcc5";
@@ -45,7 +45,7 @@ const textureCache = new Map<string, THREE.CanvasTexture>();
 let allTexturesReady = false;
 let texturesReadyPromise: Promise<void> | null = null;
 
-function wrapText(
+function wrapTextLineBlock(
   ctx: CanvasRenderingContext2D,
   text: string,
   x: number,
@@ -53,7 +53,7 @@ function wrapText(
   maxWidth: number,
   lineHeight: number,
 ): number {
-  const words = text.split(" ");
+  const words = text.split(/\s+/).filter(Boolean);
   let line = "";
   let currentY = y;
   for (const word of words) {
@@ -67,8 +67,48 @@ function wrapText(
       line = testLine;
     }
   }
-  ctx.fillText(line.trim(), x, currentY);
+  if (line.trim().length > 0) {
+    ctx.fillText(line.trim(), x, currentY);
+  }
   return currentY + lineHeight;
+}
+
+function drawParagraphText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  paragraphSpacing: number,
+  clampBottomY?: number,
+): number {
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  let currentY = y;
+  for (let i = 0; i < paragraphs.length; i++) {
+    const lines = paragraphs[i]
+      .split(/\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    for (const ln of lines) {
+      currentY = wrapTextLineBlock(ctx, ln, x, currentY, maxWidth, lineHeight);
+      if (clampBottomY !== undefined && currentY > clampBottomY) {
+        return clampBottomY;
+      }
+    }
+    if (i < paragraphs.length - 1) {
+      currentY += paragraphSpacing;
+      if (clampBottomY !== undefined && currentY > clampBottomY) {
+        return clampBottomY;
+      }
+    }
+  }
+
+  return currentY;
 }
 
 function renderPageToCanvas(page: Page | undefined): HTMLCanvasElement {
@@ -141,13 +181,14 @@ function renderPageToCanvas(page: Page | undefined): HTMLCanvasElement {
       ctx.fillStyle = COVER_TEXT_COLOR;
       ctx.globalAlpha = 0.5;
       ctx.textAlign = "center";
-      wrapText(
+      drawParagraphText(
         ctx,
         page.body,
         TEX_WIDTH / 2,
         TEX_HEIGHT * 0.35,
         TEX_WIDTH * 0.7,
         36,
+        16,
       );
       ctx.globalAlpha = 1;
     }
@@ -233,7 +274,7 @@ function renderPageToCanvas(page: Page | undefined): HTMLCanvasElement {
   const textX = isCover ? TEX_WIDTH / 2 : PADDING;
   const maxWidth = TEX_WIDTH - PADDING * 2;
 
-  let currentY = isCover ? TEX_HEIGHT * 0.35 : TEX_HEIGHT * 0.3;
+  let currentY = isCover ? TEX_HEIGHT * 0.35 : TEX_HEIGHT * 0.18;
 
   if (page.title) {
     const fontSize = isCover ? 72 : 56;
@@ -241,7 +282,7 @@ function renderPageToCanvas(page: Page | undefined): HTMLCanvasElement {
     ctx.fillStyle = textColor;
     ctx.textAlign = isCover ? "center" : "left";
     ctx.textBaseline = "top";
-    currentY = wrapText(
+    currentY = wrapTextLineBlock(
       ctx,
       page.title,
       textX,
@@ -252,13 +293,27 @@ function renderPageToCanvas(page: Page | undefined): HTMLCanvasElement {
     currentY += 30;
   }
 
+  const imageTopY = TEX_HEIGHT * 0.56;
+  const bodyClampBottom = imageTopY - 36;
+
   if (page.body) {
-    const fontSize = isCover ? 26 : 24;
+    const fontSize = isCover ? 26 : 27;
     ctx.font = `${isCover ? "italic " : ""}${fontSize}px 'Inter', sans-serif`;
     ctx.fillStyle = textColor;
-    ctx.globalAlpha = isCover ? 0.85 : 0.7;
+    ctx.globalAlpha = isCover ? 0.85 : 0.88;
     ctx.textAlign = isCover ? "center" : "left";
-    wrapText(ctx, page.body, textX, currentY, maxWidth, fontSize * 1.7);
+    const lineHeight = isCover ? fontSize * 1.7 : fontSize * 1.58;
+    const paragraphSpacing = isCover ? 14 : 20;
+    drawParagraphText(
+      ctx,
+      page.body,
+      textX,
+      currentY,
+      maxWidth,
+      lineHeight,
+      paragraphSpacing,
+      isCover ? undefined : bodyClampBottom,
+    );
     ctx.globalAlpha = 1;
   }
 
@@ -269,7 +324,7 @@ function renderPageToCanvas(page: Page | undefined): HTMLCanvasElement {
       const imgPadding = PADDING;
       const imgWidth = TEX_WIDTH - imgPadding * 2;
       const imgHeight = TEX_HEIGHT * 0.3;
-      const imgY = TEX_HEIGHT * 0.58;
+      const imgY = imageTopY;
 
       const imgAspect = pageImg.naturalWidth / pageImg.naturalHeight;
       const boxAspect = imgWidth / imgHeight;

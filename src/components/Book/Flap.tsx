@@ -25,16 +25,20 @@ function bendAngleFromPosition(pw: number, bh: number): string {
 `;
 }
 
-/** Cylinder about vertical axis through hinge x = -pw/2: N ∝ (-sin(bend), 0, cos(bend)) in object space. */
-function bentNormalVertexBlock(pw: number, bh: number): string {
+/**
+ * Computes bent normal in object space and injects it into Three's expected
+ * `transformedNormal` flow before normal_vertex writes varyings.
+ */
+function bentNormalFlowBlock(pw: number, bh: number): string {
   return `
 #ifndef FLAT_SHADED
         ${bendAngleFromPosition(pw, bh)}
         vec3 bentObjectNormal = normalize(vec3(-sin(n_bend), 0.0, cos(n_bend)));
+        transformedNormal = normalMatrix * bentObjectNormal;
 #ifdef FLIP_SIDED
-        bentObjectNormal = -bentObjectNormal;
+        transformedNormal = -transformedNormal;
 #endif
-        vNormal = normalize(normalMatrix * bentObjectNormal);
+        vNormal = normalize( transformedNormal );
 #ifdef USE_TANGENT
         vTangent = normalize( transformedTangent );
         vBitangent = normalize( cross( vNormal, vTangent ) * tangent.w );
@@ -88,10 +92,7 @@ function createFoldMaterial(pw: number, bh: number, _backFace: boolean): THREE.M
 
     shader.vertexShader = 'uniform float uFold;\n' + shader.vertexShader;
 
-    shader.vertexShader = shader.vertexShader.replace(
-      '#include <normal_vertex>',
-      bentNormalVertexBlock(pw, bh),
-    );
+    shader.vertexShader = shader.vertexShader.replace('#include <normal_vertex>', bentNormalFlowBlock(pw, bh));
 
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
