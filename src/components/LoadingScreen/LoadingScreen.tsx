@@ -8,6 +8,18 @@ const FLAVOR_TEXT = [
   "Ready to park.",
 ];
 
+/** Decorative only; real commands mirror repo-parking CLI. */
+const TICKER_COMMANDS = [
+  "parking init",
+  "parking park my-app",
+  "parking list",
+  "parking status A",
+  "parking unpark my-app",
+  "parking change-password",
+  "parking recover",
+  "parking forget my-app",
+];
+
 function getFlavorText(progress: number): string {
   if (progress < 0.3) return FLAVOR_TEXT[0];
   if (progress < 0.7) return FLAVOR_TEXT[1];
@@ -27,46 +39,14 @@ export function LoadingScreen() {
   const bootProgress = useBookStore((s) => s.bootProgress);
 
   return (
-    <div
-      className={`loading-screen ${isBooted ? "fade-out" : ""}`}
-      role="status"
-      aria-live="polite"
-    >
+    <div className={`loading-screen ${isBooted ? "fade-out" : ""}`}>
       <div className={`loading-content ${getPhase(bootProgress)}`}>
-        {/* SVG Book silhouette with page flutter */}
-        <div className="loading-book-icon">
-          <svg viewBox="0 0 80 100" className="book-silhouette">
-            <rect
-              x="5"
-              y="5"
-              width="70"
-              height="90"
-              rx="3"
-              fill="#FDFBF7"
-              stroke="#c5bfb3"
-              strokeWidth="1.5"
-            />
-            <rect
-              x="5"
-              y="5"
-              width="70"
-              height="90"
-              rx="3"
-              fill="none"
-              stroke="#2b303a"
-              strokeWidth="0.5"
-              opacity="0.3"
-            />
-            <line
-              x1="40"
-              y1="8"
-              x2="40"
-              y2="92"
-              stroke="#d4cfc5"
-              strokeWidth="1"
-            />
-          </svg>
-          <div className="flutter-page" />
+        <div className="loading-book-stack" aria-hidden="true">
+          <div className="loading-fold-sheet loading-fold-sheet--back" />
+          <div className="loading-fold-sheet loading-fold-sheet--4" />
+          <div className="loading-fold-sheet loading-fold-sheet--3" />
+          <div className="loading-fold-sheet loading-fold-sheet--2" />
+          <div className="loading-fold-sheet loading-fold-sheet--1" />
         </div>
 
         <div className="loading-brand-wrap">
@@ -85,10 +65,33 @@ export function LoadingScreen() {
           />
         </div>
 
-        <div className="loading-flavor" key={getFlavorText(bootProgress)}>
+        <p className="loading-flavor" key={getFlavorText(bootProgress)}>
           {getFlavorText(bootProgress)}
+        </p>
+
+        <div className="loading-terminal" aria-hidden="true">
+          <div className="loading-terminal-track">
+            <div className="loading-terminal-segment">
+              {TICKER_COMMANDS.map((cmd) => (
+                <span key={cmd} className="loading-terminal-cmd">
+                  {cmd}
+                </span>
+              ))}
+            </div>
+            <div className="loading-terminal-segment" aria-hidden="true">
+              {TICKER_COMMANDS.map((cmd) => (
+                <span key={`${cmd}-dup`} className="loading-terminal-cmd">
+                  {cmd}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
+
+      <span className="loading-sr-only" role="status" aria-live="polite" aria-atomic="true">
+        Loading interactive book experience.
+      </span>
     </div>
   );
 }

@@ -82,7 +82,6 @@ export const pages: Page[] = [
   {
     id: "technical",
     title: "Technical Details",
-    body: "The vault is a standard git repository. Projects are stored as individual encrypted JSON files in vault/projects/. Meta information lives in vault/meta.json. Each file uses AES-256-GCM with a unique IV. The MEK is derived from your password using PBKDF2 (100,000 iterations, SHA-256). Recovery key wraps the MEK as an additional backup path. All sensitive data is encrypted before it leaves your machine.",
     image: "/images/generated/full_flow.png",
     route: "/technical",
   },

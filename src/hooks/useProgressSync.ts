@@ -19,6 +19,16 @@ function findRouteForSpread(spread: number): string | null {
   return null;
 }
 
+/** Matches store `displaySpreadIndex` for a float progress (floor vs round when reduced motion). */
+function discreteSpreadFromProgress(progress: number, prefersReducedMotion: boolean): number {
+  const maxSpread = numSpreads - 1;
+  const clamped = Math.max(0, Math.min(progress, maxSpread));
+  if (prefersReducedMotion) {
+    return Math.min(maxSpread, Math.max(0, Math.round(clamped)));
+  }
+  return Math.floor(clamped);
+}
+
 export function useProgressSync() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -64,14 +74,15 @@ export function useProgressSync() {
     if (saved === null) return;
 
     const clamped = Math.max(0, Math.min(saved, numSpreads - 1));
-    const savedRounded = Math.round(clamped);
+    const prefersRM = useBookStore.getState().prefersReducedMotion;
+    const savedDiscrete = discreteSpreadFromProgress(clamped, prefersRM);
     const urlSpread = routeToSpread[location.pathname];
 
     requestAnimationFrame(() => {
       if (location.pathname === '/') {
         if (Math.abs(clamped) < 1e-4) return;
         scrollToSpread(clamped, { immediate: true });
-        const route = findRouteForSpread(savedRounded);
+        const route = findRouteForSpread(savedDiscrete);
         if (route && route !== '/') {
           navigate(route, { replace: true });
         }
@@ -79,7 +90,7 @@ export function useProgressSync() {
       }
 
       if (urlSpread !== undefined) {
-        if (urlSpread !== savedRounded) return;
+        if (urlSpread !== savedDiscrete) return;
         scrollToSpread(clamped, { immediate: true });
       }
     });
@@ -89,7 +100,7 @@ export function useProgressSync() {
     const targetSpread = routeToSpread[location.pathname];
     if (targetSpread === undefined) return;
 
-    const currentSpread = Math.round(useBookStore.getState().progress);
+    const currentSpread = useBookStore.getState().displaySpreadIndex;
     if (currentSpread === targetSpread) return;
 
     const delay = useBookStore.getState().isBooted ? 50 : 2500;
@@ -101,7 +112,7 @@ export function useProgressSync() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
 
-      const current = Math.round(useBookStore.getState().progress);
+      const current = useBookStore.getState().displaySpreadIndex;
       let target = current;
 
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {

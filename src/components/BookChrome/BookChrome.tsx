@@ -27,11 +27,11 @@ export function BookProgressIndicator() {
 
 export function SpreadNavTapZones() {
   const navigate = useNavigate();
-  const progress = useBookStore((s) => s.progress);
+  const displaySpreadIndex = useBookStore((s) => s.displaySpreadIndex);
 
   const go = useCallback(
     (delta: number) => {
-      const current = Math.round(progress);
+      const current = displaySpreadIndex;
       const target = Math.min(numSpreads - 1, Math.max(0, current + delta));
       if (target === current) return;
       const route = findRouteForSpread(target);
@@ -44,7 +44,7 @@ export function SpreadNavTapZones() {
         });
       }
     },
-    [navigate, progress],
+    [navigate, displaySpreadIndex],
   );
 
   return (

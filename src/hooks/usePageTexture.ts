@@ -15,8 +15,11 @@ const PADDING = 100;
 
 const PAPER_COLOR = "#FDFBF7";
 const COVER_COLOR = "#2b303a";
-/** Front/back cover hero art; kept in public/ for preload + canvas texture generation. */
-const COVER_ART_SRC = "/images/cover-front.png";
+/**
+ * Front/back cover hero art only (not inner pages or the technical diagram).
+ * Asset: public/images/cover-image.png → URL path below.
+ */
+const COVER_ART_SRC = "/images/cover-image.png";
 const TEXT_COLOR = "#333333";
 const COVER_TEXT_COLOR = "#e8dcc5";
 
@@ -73,6 +76,108 @@ function wrapTextLineBlock(
   return currentY + lineHeight;
 }
 
+function fillTextEllipsis(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+) {
+  const ell = "\u2026";
+  if (ctx.measureText(text).width <= maxWidth) {
+    ctx.fillText(text, x, y);
+    return;
+  }
+  let lo = 0;
+  let hi = text.length;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    const slice = text.slice(0, mid).trimEnd() + ell;
+    if (ctx.measureText(slice).width <= maxWidth) lo = mid;
+    else hi = mid - 1;
+  }
+  ctx.fillText(text.slice(0, lo).trimEnd() + ell, x, y);
+}
+
+/** Word-wrap one block; stops with ellipsis when baseline would exceed maxBaselineY. */
+function wrapTextLineBlockWithClamp(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  maxBaselineY: number,
+): { nextY: number; truncated: boolean } {
+  const words = text.split(/\s+/).filter(Boolean);
+  let line = "";
+  let currentY = y;
+
+  for (const word of words) {
+    const testLine = line + word + " ";
+    if (ctx.measureText(testLine).width > maxWidth && line !== "") {
+      if (currentY > maxBaselineY) {
+        fillTextEllipsis(ctx, line.trim(), x, maxBaselineY, maxWidth);
+        return { nextY: maxBaselineY + lineHeight, truncated: true };
+      }
+      ctx.fillText(line.trim(), x, currentY);
+      line = word + " ";
+      currentY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  if (line.trim().length > 0) {
+    if (currentY > maxBaselineY) {
+      fillTextEllipsis(ctx, line.trim(), x, maxBaselineY, maxWidth);
+      return { nextY: maxBaselineY + lineHeight, truncated: true };
+    }
+    ctx.fillText(line.trim(), x, currentY);
+    currentY += lineHeight;
+  }
+  return { nextY: currentY, truncated: false };
+}
+
+function measureFullParagraphHeight(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  lineHeight: number,
+  paragraphSpacing: number,
+): number {
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  let currentY = 0;
+  for (let i = 0; i < paragraphs.length; i++) {
+    const lines = paragraphs[i]
+      .split(/\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    for (const ln of lines) {
+      const words = ln.split(/\s+/).filter(Boolean);
+      let line = "";
+      for (const word of words) {
+        const testLine = line + word + " ";
+        if (ctx.measureText(testLine).width > maxWidth && line !== "") {
+          currentY += lineHeight;
+          line = word + " ";
+        } else {
+          line = testLine;
+        }
+      }
+      if (line.trim().length > 0) {
+        currentY += lineHeight;
+      }
+    }
+    if (i < paragraphs.length - 1) {
+      currentY += paragraphSpacing;
+    }
+  }
+  return currentY;
+}
+
 function drawParagraphText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -82,33 +187,49 @@ function drawParagraphText(
   lineHeight: number,
   paragraphSpacing: number,
   clampBottomY?: number,
-): number {
+): { finalY: number; truncated: boolean } {
   const paragraphs = text
     .split(/\n{2,}/)
     .map((p) => p.trim())
     .filter(Boolean);
 
   let currentY = y;
+  const maxBaselineY =
+    clampBottomY !== undefined ? clampBottomY : Number.POSITIVE_INFINITY;
+
   for (let i = 0; i < paragraphs.length; i++) {
     const lines = paragraphs[i]
       .split(/\n/)
       .map((l) => l.trim())
       .filter(Boolean);
     for (const ln of lines) {
-      currentY = wrapTextLineBlock(ctx, ln, x, currentY, maxWidth, lineHeight);
-      if (clampBottomY !== undefined && currentY > clampBottomY) {
-        return clampBottomY;
+      if (clampBottomY !== undefined) {
+        const { nextY, truncated } = wrapTextLineBlockWithClamp(
+          ctx,
+          ln,
+          x,
+          currentY,
+          maxWidth,
+          lineHeight,
+          maxBaselineY,
+        );
+        currentY = nextY;
+        if (truncated) {
+          return { finalY: currentY, truncated: true };
+        }
+      } else {
+        currentY = wrapTextLineBlock(ctx, ln, x, currentY, maxWidth, lineHeight);
       }
     }
     if (i < paragraphs.length - 1) {
       currentY += paragraphSpacing;
       if (clampBottomY !== undefined && currentY > clampBottomY) {
-        return clampBottomY;
+        return { finalY: clampBottomY, truncated: true };
       }
     }
   }
 
-  return currentY;
+  return { finalY: currentY, truncated: false };
 }
 
 function renderPageToCanvas(page: Page | undefined): HTMLCanvasElement {
@@ -181,7 +302,7 @@ function renderPageToCanvas(page: Page | undefined): HTMLCanvasElement {
       ctx.fillStyle = COVER_TEXT_COLOR;
       ctx.globalAlpha = 0.5;
       ctx.textAlign = "center";
-      drawParagraphText(
+      void drawParagraphText(
         ctx,
         page.body,
         TEX_WIDTH / 2,
@@ -199,6 +320,70 @@ function renderPageToCanvas(page: Page | undefined): HTMLCanvasElement {
     ctx.textAlign = "center";
     ctx.fillText("FIRST EDITION \u00B7 2026", TEX_WIDTH / 2, TEX_HEIGHT * 0.88);
     ctx.globalAlpha = 1;
+
+    return canvas;
+  }
+
+  // Diagram-only spread: title + full-bleed flow chart (no body, no page number)
+  if (page.id === "technical") {
+    ctx.fillStyle = PAPER_COLOR;
+    ctx.fillRect(0, 0, TEX_WIDTH, TEX_HEIGHT);
+
+    const spineGrad = ctx.createLinearGradient(0, 0, 80, 0);
+    spineGrad.addColorStop(0, "rgba(0,0,0,0.08)");
+    spineGrad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = spineGrad;
+    ctx.fillRect(0, 0, 80, TEX_HEIGHT);
+
+    const rightEdge = ctx.createLinearGradient(TEX_WIDTH - 30, 0, TEX_WIDTH, 0);
+    rightEdge.addColorStop(0, "rgba(0,0,0,0)");
+    rightEdge.addColorStop(1, "rgba(0,0,0,0.03)");
+    ctx.fillStyle = rightEdge;
+    ctx.fillRect(TEX_WIDTH - 30, 0, 30, TEX_HEIGHT);
+
+    const marginX = PADDING * 0.55;
+    const titleTop = TEX_HEIGHT * 0.052;
+    let contentTop = titleTop;
+
+    if (page.title) {
+      ctx.font = `bold 48px 'Playfair Display', serif`;
+      ctx.fillStyle = TEXT_COLOR;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      const titleMaxW = TEX_WIDTH - marginX * 2;
+      contentTop = wrapTextLineBlock(
+        ctx,
+        page.title,
+        TEX_WIDTH / 2,
+        titleTop,
+        titleMaxW,
+        48 * 1.18,
+      );
+      contentTop += TEX_HEIGHT * 0.022;
+    }
+
+    const diagramSrc = page.image ?? "/images/generated/full_flow.png";
+    const pageImg = imageCache.get(diagramSrc);
+    const marginBottom = PADDING * 0.65;
+    const availW = TEX_WIDTH - marginX * 2;
+    const availH = TEX_HEIGHT - contentTop - marginBottom;
+
+    if (pageImg && pageImg.complete && pageImg.naturalWidth > 0 && availH > 32 && availW > 32) {
+      const ar = pageImg.naturalWidth / pageImg.naturalHeight;
+      const boxAr = availW / availH;
+      let dw: number;
+      let dh: number;
+      if (ar > boxAr) {
+        dw = availW;
+        dh = availW / ar;
+      } else {
+        dh = availH;
+        dw = availH * ar;
+      }
+      const dx = marginX + (availW - dw) / 2;
+      const dy = contentTop + (availH - dh) / 2;
+      ctx.drawImage(pageImg, dx, dy, dw, dh);
+    }
 
     return canvas;
   }
@@ -295,26 +480,75 @@ function renderPageToCanvas(page: Page | undefined): HTMLCanvasElement {
 
   const imageTopY = TEX_HEIGHT * 0.56;
   const bodyClampBottom = imageTopY - 36;
+  /** Reserve space below body for optional “(continued)” cue when truncated. */
+  const bodyMaxBaseline = bodyClampBottom - 26;
 
   if (page.body) {
-    const fontSize = isCover ? 26 : 27;
+    const paragraphSpacing = isCover ? 14 : 20;
+    let fontSize = isCover ? 26 : 27;
+    let lineHeight = isCover ? fontSize * 1.7 : fontSize * 1.58;
+
+    if (!isCover) {
+      const maxBodyPx = bodyMaxBaseline - currentY;
+      let picked = 27;
+      for (const fs of [27, 25, 23, 21]) {
+        ctx.font = `${fs}px 'Inter', sans-serif`;
+        const lh = fs * 1.58;
+        const h = measureFullParagraphHeight(
+          ctx,
+          page.body,
+          maxWidth,
+          lh,
+          paragraphSpacing,
+        );
+        if (h <= maxBodyPx) {
+          picked = fs;
+          break;
+        }
+        picked = fs;
+      }
+      fontSize = picked;
+      lineHeight = fontSize * 1.58;
+    }
+
     ctx.font = `${isCover ? "italic " : ""}${fontSize}px 'Inter', sans-serif`;
     ctx.fillStyle = textColor;
     ctx.globalAlpha = isCover ? 0.85 : 0.88;
     ctx.textAlign = isCover ? "center" : "left";
-    const lineHeight = isCover ? fontSize * 1.7 : fontSize * 1.58;
-    const paragraphSpacing = isCover ? 14 : 20;
-    drawParagraphText(
-      ctx,
-      page.body,
-      textX,
-      currentY,
-      maxWidth,
-      lineHeight,
-      paragraphSpacing,
-      isCover ? undefined : bodyClampBottom,
-    );
-    ctx.globalAlpha = 1;
+
+    if (isCover) {
+      void drawParagraphText(
+        ctx,
+        page.body,
+        textX,
+        currentY,
+        maxWidth,
+        lineHeight,
+        paragraphSpacing,
+        undefined,
+      );
+      ctx.globalAlpha = 1;
+    } else {
+      const bodyDraw = drawParagraphText(
+        ctx,
+        page.body,
+        textX,
+        currentY,
+        maxWidth,
+        lineHeight,
+        paragraphSpacing,
+        bodyMaxBaseline,
+      );
+      ctx.globalAlpha = 1;
+      if (bodyDraw.truncated) {
+        ctx.font = `italic 14px 'Inter', sans-serif`;
+        ctx.fillStyle = textColor;
+        ctx.globalAlpha = 0.52;
+        ctx.textAlign = "left";
+        ctx.fillText("(continued)", textX, bodyClampBottom - 8);
+        ctx.globalAlpha = 1;
+      }
+    }
   }
 
   // Page image
