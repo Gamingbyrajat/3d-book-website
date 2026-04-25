@@ -1,0 +1,108 @@
+.image-inspect-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: min(5vw, 2rem);
+  background: rgba(18, 16, 14, 0.52);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: imageInspectBackdropIn 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes imageInspectBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.image-inspect-backdrop--exit {
+  animation: imageInspectBackdropOut 240ms ease forwards;
+}
+
+@keyframes imageInspectBackdropOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.image-inspect-dialog {
+  position: relative;
+  max-width: min(96vw, 1200px);
+  max-height: min(88vh, 900px);
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+}
+
+.image-inspect-close {
+  position: absolute;
+  top: -2.75rem;
+  right: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(40, 36, 32, 0.55);
+  color: #f5f0e8;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.image-inspect-close:hover {
+  background: rgba(60, 54, 48, 0.75);
+  transform: scale(1.05);
+}
+
+.image-inspect-frame {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  background: #111;
+  will-change: transform, opacity;
+}
+
+.image-inspect-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(85vh, 860px);
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.page-image-zoom-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(43, 48, 58, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  color: #fdfbf7;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.92);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.page-image-zoom-hint__icon {
+  display: block;
+  flex-shrink: 0;
+}
+
+.page-image-zoom-hint--visible {
+  opacity: 1;
+  transform: scale(1);
+}

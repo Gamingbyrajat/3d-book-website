@@ -20,7 +20,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.55rem;
   animation: contentFadeIn 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -29,72 +29,124 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Layered pages — sequential fold illusion */
-.loading-book-stack {
+/* —— Book silhouette: board + spine + turning pages —— */
+.loading-book-stage {
+  width: 124px;
+  height: 148px;
   position: relative;
-  width: 108px;
-  height: 132px;
-  perspective: 520px;
-  transform-style: preserve-3d;
-  filter: drop-shadow(0 10px 22px rgba(25, 20, 14, 0.16));
+  isolation: isolate;
 }
 
-.loading-fold-sheet {
+/* Elliptical contact shadow — not tied to 3D transforms (avoids drop-shadow “smear”). */
+.loading-book-stage::after {
+  content: "";
   position: absolute;
-  left: 8%;
-  top: 6%;
-  width: 46%;
-  height: 88%;
-  background: linear-gradient(105deg, #fdfbf7 0%, #f5f1ea 55%, #ebe6dc 100%);
+  left: 50%;
+  bottom: -6px;
+  width: 82%;
+  height: 16px;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    rgba(25, 20, 14, 0.2) 0%,
+    rgba(25, 20, 14, 0.06) 45%,
+    transparent 72%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.loading-book-perspective {
+  position: absolute;
+  inset: 0;
+  perspective: 640px;
+  perspective-origin: 45% 50%;
+  transform-style: preserve-3d;
+}
+
+.loading-book-board {
+  position: absolute;
+  left: 6%;
+  top: 5%;
+  width: 88%;
+  height: 90%;
+  border-radius: 5px;
+  background: linear-gradient(145deg, #e8e2d8 0%, #d8d0c4 40%, #c9c0b2 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.06),
+    0 6px 14px rgba(25, 20, 14, 0.07);
+  transform: translateZ(-22px);
+}
+
+.loading-book-spine {
+  position: absolute;
+  left: 6%;
+  top: 5%;
+  width: 9%;
+  height: 90%;
+  border-radius: 3px 0 0 3px;
+  background: linear-gradient(90deg, #4a4338 0%, #6b6254 45%, #8a8072 100%);
+  transform: translateZ(-12px) translateX(-1px);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.12);
+}
+
+.loading-book-pages {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+.loading-page {
+  position: absolute;
+  left: 14%;
+  top: 7%;
+  width: 52%;
+  height: 86%;
   border-radius: 0 4px 4px 0;
-  border: 0.5px solid #c9c2b6;
   transform-origin: left center;
-  box-shadow: -3px 0 14px rgba(0, 0, 0, 0.07);
+  background: linear-gradient(100deg, #fffefb 0%, #f7f3eb 45%, #ebe6dc 100%);
+  border: 0.5px solid #b8b0a4;
+  box-shadow:
+    -2px 0 8px rgba(0, 0, 0, 0.06),
+    -1px 0 3px rgba(0, 0, 0, 0.04);
+  backface-visibility: visible;
+  animation: pageTurnCycle 7s cubic-bezier(0.33, 0.02, 0.28, 1) infinite;
 }
 
-.loading-fold-sheet--back {
-  left: 8%;
-  width: 84%;
-  background: #fdfbf7;
-  border-radius: 4px;
-  border-color: #c5bfb3;
-  transform: translateZ(-14px) translateX(0);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-  animation: none;
-}
+/* Stagger: each sheet turns after the previous (~11s → 7s spacing) */
+.loading-page--1 { z-index: 6; animation-delay: 0s; }
+.loading-page--2 { z-index: 5; opacity: 0.97; animation-delay: 0.67s; }
+.loading-page--3 { z-index: 4; opacity: 0.94; animation-delay: 1.34s; }
+.loading-page--4 { z-index: 3; opacity: 0.91; animation-delay: 2.01s; }
+.loading-page--5 { z-index: 2; opacity: 0.88; animation-delay: 2.68s; }
 
-.loading-fold-sheet--1 {
-  z-index: 5;
-  animation: foldStep 3.2s cubic-bezier(0.45, 0.02, 0.2, 1) infinite;
-}
-
-.loading-fold-sheet--2 {
-  z-index: 4;
-  opacity: 0.96;
-  animation: foldStep 3.2s cubic-bezier(0.45, 0.02, 0.2, 1) infinite;
-  animation-delay: 0.18s;
-}
-
-.loading-fold-sheet--3 {
-  z-index: 3;
-  opacity: 0.92;
-  animation: foldStep 3.2s cubic-bezier(0.45, 0.02, 0.2, 1) infinite;
-  animation-delay: 0.36s;
-}
-
-.loading-fold-sheet--4 {
-  z-index: 2;
-  opacity: 0.88;
-  animation: foldStep 3.2s cubic-bezier(0.45, 0.02, 0.2, 1) infinite;
-  animation-delay: 0.54s;
-}
-
-@keyframes foldStep {
-  0%, 100% { transform: rotateY(0deg) translateZ(0); }
-  18% { transform: rotateY(-52deg) translateZ(2px); }
-  36% { transform: rotateY(-8deg) translateZ(0); }
-  54% { transform: rotateY(-38deg) translateZ(1px); }
-  72% { transform: rotateY(-16deg) translateZ(0); }
+/**
+ * One full turn: rest → fast sweep toward closed book (~175°) → soft settle → brief hold → reopen.
+ * No mid-cycle wobble; secondary motion is the next sheet’s turn.
+ */
+@keyframes pageTurnCycle {
+  0%, 4% {
+    transform: rotateY(0deg) translateZ(0);
+  }
+  14% {
+    transform: rotateY(-178deg) translateZ(1px);
+  }
+  18% {
+    transform: rotateY(-174deg) translateZ(0.5px);
+  }
+  26% {
+    transform: rotateY(-174deg) translateZ(0);
+  }
+  38% {
+    transform: rotateY(0deg) translateZ(0);
+  }
+  100% {
+    transform: rotateY(0deg) translateZ(0);
+  }
 }
 
 .loading-brand-wrap {
@@ -153,34 +205,50 @@
 }
 
 .loading-terminal {
-  width: min(92vw, 380px);
+  width: min(92vw, 400px);
   max-width: 100%;
+}
+
+.loading-terminal-viewport {
   overflow: hidden;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.78rem;
-  color: rgba(43, 48, 58, 0.56);
-  border-left: 2px solid rgba(173, 154, 123, 0.45);
-  padding: 0.2rem 0 0.2rem 0.75rem;
-  min-height: 1.5rem;
+  border-left: 2px solid rgba(173, 154, 123, 0.5);
+  padding: 0.35rem 0 0.35rem 0.85rem;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 0 6px 6px 0;
+  min-height: 2.1rem;
+  display: flex;
+  align-items: center;
 }
 
 .loading-terminal-track {
   display: flex;
   width: max-content;
-  animation: terminalMarquee 22s linear infinite;
+  will-change: transform;
+  animation: terminalMarquee 24s linear infinite;
+  transform: translate3d(0, 0, 0);
 }
 
 .loading-terminal-segment {
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 2.25rem;
-  padding-right: 2.25rem;
+  gap: 2.75rem;
+  padding-right: 2.75rem;
+  white-space: nowrap;
+}
+
+.loading-terminal-cmd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(43, 48, 58, 0.62);
 }
 
 .loading-terminal-cmd::before {
   content: "$ ";
-  opacity: 0.4;
+  opacity: 0.38;
+  font-weight: 400;
 }
 
 .loading-content.phase-4 .loading-progress-fill {
@@ -200,17 +268,19 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loading-fold-sheet--1,
-  .loading-fold-sheet--2,
-  .loading-fold-sheet--3,
-  .loading-fold-sheet--4 {
+  .loading-page {
     animation: none;
-    transform: rotateY(-6deg);
-    opacity: 0.9;
+    transform: rotateY(-10deg);
+    opacity: 0.92;
   }
 
   .loading-terminal-track {
     animation: none;
+    transform: none;
+  }
+
+  .loading-terminal-viewport {
+    justify-content: flex-start;
   }
 
   .loading-screen.fade-out {

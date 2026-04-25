@@ -37,6 +37,11 @@ body {
   pointer-events: none;
 }
 
+/* Belt-and-suspenders with Lenis.stop() while image inspect modal is open */
+.scroll-spacer.scroll-spacer--inspect-lock {
+  pointer-events: none;
+}
+
 /* ===== NAVBAR ===== */
 .navbar {
   position: fixed;

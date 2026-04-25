@@ -7,6 +7,7 @@ import { LoadingScreen } from './components/LoadingScreen/LoadingScreen';
 import { HeroSection } from './components/HeroSection/HeroSection';
 import { ContactForm } from './components/ContactForm/ContactForm';
 import { BookProgressIndicator, SpreadNavTapZones } from './components/BookChrome/BookChrome';
+import { ImageInspectModal } from './components/ImageInspect/ImageInspectModal';
 import { useProgressSync } from './hooks/useProgressSync';
 import { useBootSequence } from './hooks/useBootSequence';
 import { useBookStore } from './store';
@@ -17,6 +18,7 @@ function BookApp() {
   useProgressSync();
   const isBooted = useBookStore((s) => s.isBooted);
   const gpuWarmupStarted = useBookStore((s) => s.gpuWarmupStarted);
+  const imageInspectOpen = useBookStore((s) => s.imageInspect.open);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -34,7 +36,7 @@ function BookApp() {
     <>
       {/* Scroll height spacer */}
       <div
-        className="scroll-spacer"
+        className={`scroll-spacer${imageInspectOpen ? ' scroll-spacer--inspect-lock' : ''}`}
         style={{ height: `${numSpreads * 100}vh` }}
       />
 
@@ -57,6 +59,8 @@ function BookApp() {
       {isBooted && <HeroSection />}
 
       {isBooted && <ContactForm />}
+
+      {isBooted && <ImageInspectModal />}
     </>
   );
 }

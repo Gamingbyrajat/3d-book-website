@@ -3,6 +3,14 @@ import { numSpreads } from './content/pages';
 
 const STORAGE_KEY = 'repo-parking-book-progress';
 
+export type ImageInspectState = {
+  open: boolean;
+  src: string;
+  alt: string;
+  /** Thumbnail bounds in viewport CSS pixels for FLIP (optional fallback = center). */
+  fromRect: { left: number; top: number; width: number; height: number } | null;
+};
+
 interface BookStore {
   progress: number;
   spreadIndex: number;
@@ -17,6 +25,8 @@ interface BookStore {
   shaderWarmed: boolean;
   prefersReducedMotion: boolean;
 
+  imageInspect: ImageInspectState;
+
   setProgress: (p: number) => void;
   setAnimating: (v: boolean) => void;
   setBooted: (v: boolean) => void;
@@ -24,6 +34,8 @@ interface BookStore {
   setGpuWarmupStarted: (v: boolean) => void;
   setShaderWarmed: (v: boolean) => void;
   setPrefersReducedMotion: (v: boolean) => void;
+  openImageInspect: (payload: Omit<ImageInspectState, "open">) => void;
+  closeImageInspect: () => void;
 }
 
 export const useBookStore = create<BookStore>((set, get) => ({
@@ -37,6 +49,13 @@ export const useBookStore = create<BookStore>((set, get) => ({
   gpuWarmupStarted: false,
   shaderWarmed: false,
   prefersReducedMotion: false,
+
+  imageInspect: {
+    open: false,
+    src: "",
+    alt: "",
+    fromRect: null,
+  },
 
   setProgress: (p: number) => {
     const clamped = Math.max(0, Math.min(p, numSpreads - 1));
@@ -65,6 +84,21 @@ export const useBookStore = create<BookStore>((set, get) => ({
       return { prefersReducedMotion: v, displaySpreadIndex };
     });
   },
+
+  openImageInspect: (payload) =>
+    set({
+      imageInspect: {
+        open: true,
+        src: payload.src,
+        alt: payload.alt,
+        fromRect: payload.fromRect,
+      },
+    }),
+
+  closeImageInspect: () =>
+    set((s) => ({
+      imageInspect: { ...s.imageInspect, open: false, fromRect: null },
+    })),
 }));
 
 export function readSavedBookProgress(): number | null {

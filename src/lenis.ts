@@ -12,6 +12,19 @@ export function setLenisSmoothWheel(enabled: boolean) {
   lenis.options.smoothWheel = enabled;
 }
 
+let imageInspectScrollLockDepth = 0;
+
+/** Pause Lenis wheel/smooth scrolling while the image inspect modal is open (nested-safe). */
+export function setLenisImageInspectScrollLock(locked: boolean) {
+  if (locked) {
+    imageInspectScrollLockDepth += 1;
+    if (imageInspectScrollLockDepth === 1) lenis.stop();
+  } else {
+    imageInspectScrollLockDepth = Math.max(0, imageInspectScrollLockDepth - 1);
+    if (imageInspectScrollLockDepth === 0) lenis.start();
+  }
+}
+
 function raf(time: number) {
   lenis.raf(time);
   requestAnimationFrame(raf);

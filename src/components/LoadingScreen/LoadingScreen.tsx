@@ -20,6 +20,8 @@ const TICKER_COMMANDS = [
   "parking forget my-app",
 ];
 
+const PAGE_COUNT = 5;
+
 function getFlavorText(progress: number): string {
   if (progress < 0.3) return FLAVOR_TEXT[0];
   if (progress < 0.7) return FLAVOR_TEXT[1];
@@ -41,12 +43,16 @@ export function LoadingScreen() {
   return (
     <div className={`loading-screen ${isBooted ? "fade-out" : ""}`}>
       <div className={`loading-content ${getPhase(bootProgress)}`}>
-        <div className="loading-book-stack" aria-hidden="true">
-          <div className="loading-fold-sheet loading-fold-sheet--back" />
-          <div className="loading-fold-sheet loading-fold-sheet--4" />
-          <div className="loading-fold-sheet loading-fold-sheet--3" />
-          <div className="loading-fold-sheet loading-fold-sheet--2" />
-          <div className="loading-fold-sheet loading-fold-sheet--1" />
+        <div className="loading-book-stage" aria-hidden="true">
+          <div className="loading-book-perspective">
+            <div className="loading-book-board" />
+            <div className="loading-book-spine" />
+            <div className="loading-book-pages">
+              {Array.from({ length: PAGE_COUNT }, (_, i) => (
+                <div key={i} className={`loading-page loading-page--${i + 1}`} />
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="loading-brand-wrap">
@@ -70,20 +76,22 @@ export function LoadingScreen() {
         </p>
 
         <div className="loading-terminal" aria-hidden="true">
-          <div className="loading-terminal-track">
-            <div className="loading-terminal-segment">
-              {TICKER_COMMANDS.map((cmd) => (
-                <span key={cmd} className="loading-terminal-cmd">
-                  {cmd}
-                </span>
-              ))}
-            </div>
-            <div className="loading-terminal-segment" aria-hidden="true">
-              {TICKER_COMMANDS.map((cmd) => (
-                <span key={`${cmd}-dup`} className="loading-terminal-cmd">
-                  {cmd}
-                </span>
-              ))}
+          <div className="loading-terminal-viewport">
+            <div className="loading-terminal-track">
+              <div className="loading-terminal-segment">
+                {TICKER_COMMANDS.map((cmd) => (
+                  <span key={cmd} className="loading-terminal-cmd">
+                    {cmd}
+                  </span>
+                ))}
+              </div>
+              <div className="loading-terminal-segment" aria-hidden="true">
+                {TICKER_COMMANDS.map((cmd) => (
+                  <span key={`${cmd}-b`} className="loading-terminal-cmd">
+                    {cmd}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>

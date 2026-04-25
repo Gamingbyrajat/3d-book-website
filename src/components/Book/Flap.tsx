@@ -1,7 +1,12 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useLayoutEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { Html } from '@react-three/drei';
 import { useBookStore } from '../../store';
+import { usePageImageInspectHandlers } from '../../hooks/usePageImageInspect';
+import { pageHasInspectableImage } from '../../lib/pageImageBounds';
+import { INSPECT_PICK_USERDATA_KEY } from '../../lib/bookInspectPick';
+import { PageImageZoomHint } from './PageImageZoomHint';
 import { usePageTexture } from '../../hooks/usePageTexture';
 import type { Page } from '../../content/pages';
 import { useBookQuality } from '../../hooks/useBookQuality';
@@ -192,12 +197,92 @@ export function Flap({ bookWidth, bookHeight, frontPage, backPage, reactSpreadIn
   const isCover = frontPage?.isCover || backPage?.isCover;
   const zPos = isCover ? 0.003 : 0.001;
 
+  const frontInspect = usePageImageInspectHandlers(frontPage, pageWidth, bookHeight, 'flapFront');
+  const backInspect = usePageImageInspectHandlers(backPage, pageWidth, bookHeight, 'flapBack');
+  const frontMeshRef = useRef<THREE.Mesh>(null);
+  const backMeshRef = useRef<THREE.Mesh>(null);
+
+  const showFrontInspect = pageHasInspectableImage(frontPage);
+  const showBackInspect = pageHasInspectableImage(backPage);
+
+  useLayoutEffect(() => {
+    const mesh = frontMeshRef.current;
+    if (!mesh) return;
+    if (showFrontInspect && frontPage) {
+      mesh.userData[INSPECT_PICK_USERDATA_KEY] = {
+        kind: 'flapFront',
+        page: frontPage,
+        pageWidth,
+        bookHeight,
+      };
+    } else {
+      delete mesh.userData[INSPECT_PICK_USERDATA_KEY];
+    }
+  }, [showFrontInspect, frontPage, pageWidth, bookHeight]);
+
+  useLayoutEffect(() => {
+    const mesh = backMeshRef.current;
+    if (!mesh) return;
+    if (showBackInspect && backPage) {
+      mesh.userData[INSPECT_PICK_USERDATA_KEY] = {
+        kind: 'flapBack',
+        page: backPage,
+        pageWidth,
+        bookHeight,
+      };
+    } else {
+      delete mesh.userData[INSPECT_PICK_USERDATA_KEY];
+    }
+  }, [showBackInspect, backPage, pageWidth, bookHeight]);
+
   if (frontPage?.isFormPage) return null;
 
   return (
     <group position={[pageWidth / 2, 0, zPos]}>
-      <mesh geometry={geometry} material={frontMat} position={[0, 0, 0.00025]} receiveShadow />
-      <mesh geometry={geometry} material={backMat} position={[0, 0, -0.00025]} receiveShadow />
+      <mesh
+        ref={frontMeshRef}
+        geometry={geometry}
+        material={frontMat}
+        position={[0, 0, 0.00025]}
+        receiveShadow
+        onPointerMove={showFrontInspect ? frontInspect.onPointerMove : undefined}
+        onPointerOut={showFrontInspect ? frontInspect.onPointerOut : undefined}
+      />
+      {showFrontInspect && frontInspect.bounds && (
+        <group position={[0, 0, 0.00032]}>
+          <Html
+            center
+            position={frontInspect.hintPosition}
+            distanceFactor={5.5}
+            style={{ pointerEvents: 'none' }}
+            zIndexRange={[52, 0]}
+          >
+            <PageImageZoomHint active={frontInspect.showZoomHint} />
+          </Html>
+        </group>
+      )}
+      <mesh
+        ref={backMeshRef}
+        geometry={geometry}
+        material={backMat}
+        position={[0, 0, -0.00025]}
+        receiveShadow
+        onPointerMove={showBackInspect ? backInspect.onPointerMove : undefined}
+        onPointerOut={showBackInspect ? backInspect.onPointerOut : undefined}
+      />
+      {showBackInspect && backInspect.bounds && (
+        <group position={[0, 0, -0.00032]}>
+          <Html
+            center
+            position={backInspect.hintPosition}
+            distanceFactor={5.5}
+            style={{ pointerEvents: 'none' }}
+            zIndexRange={[51, 0]}
+          >
+            <PageImageZoomHint active={backInspect.showZoomHint} />
+          </Html>
+        </group>
+      )}
     </group>
   );
 }
