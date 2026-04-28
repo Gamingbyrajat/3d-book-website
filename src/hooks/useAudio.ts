@@ -5,7 +5,7 @@ import { initAudio, updatePaperRustle, resumeAudio } from '../audio/paperRustle'
 
 export function useAudio() {
   const lastProgress = useRef(0);
-  const lastTime = useRef(performance.now());
+  const lastTime = useRef(0);
 
   useEffect(() => {
     const handleGesture = () => {
@@ -27,6 +27,11 @@ export function useAudio() {
   useFrame(() => {
     const progress = useBookStore.getState().progress;
     const now = performance.now();
+    if (lastTime.current <= 0) {
+      lastTime.current = now;
+      lastProgress.current = progress;
+      return;
+    }
     const dt = now - lastTime.current || 1;
     const velocity = Math.abs(progress - lastProgress.current) / dt;
 

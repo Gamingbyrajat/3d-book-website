@@ -1,9 +1,15 @@
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useLayoutEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { Html } from '@react-three/drei';
 import { useBookStore } from '../../store';
+import { usePageImageInspectHandlers } from '../../hooks/usePageImageInspect';
+import { pageHasInspectableImage } from '../../lib/pageImageBounds';
+import { INSPECT_PICK_USERDATA_KEY } from '../../lib/bookInspectPick';
+import { PageImageZoomHint } from './PageImageZoomHint';
 import { usePageTexture } from '../../hooks/usePageTexture';
 import type { Page } from '../../content/pages';
+import { useBookQuality } from '../../hooks/useBookQuality';
 
 interface FlapProps {
   bookWidth: number;
@@ -13,148 +19,270 @@ interface FlapProps {
   reactSpreadIndex: number;
 }
 
-const SEGMENTS_X = 48;
-const SEGMENTS_Y = 24;
+/** Same bend angle as vertex deformation; uses `position` (attribute) so it can run in normal_vertex before displacement. */
+function bendAngleFromPosition(pw: number, bh: number): string {
+  return `
+        float n_xN = (position.x + ${(pw / 2).toFixed(6)}) / ${pw.toFixed(6)};
+        float n_yN = (position.y + ${(bh / 2).toFixed(6)}) / ${bh.toFixed(6)};
+        float n_cornerDelay = n_yN * 0.22;
+        float n_localFold = clamp((uFold - n_cornerDelay) / max(1.0 - n_cornerDelay, 0.01), 0.0, 1.0);
+        float n_bend = n_localFold * 3.14159265;
+`;
+}
 
-export function Flap({ bookWidth, bookHeight, frontPage, backPage, reactSpreadIndex }: FlapProps) {
-  const pageWidth = bookWidth / 2;
-  const meshRef = useRef<THREE.Mesh>(null);
+/**
+ * Computes bent normal in object space and injects it into Three's expected
+ * `transformedNormal` flow before normal_vertex writes varyings.
+ */
+function bentNormalFlowBlock(pw: number, bh: number): string {
+  return `
+#ifndef FLAT_SHADED
+        ${bendAngleFromPosition(pw, bh)}
+        vec3 bentObjectNormal = normalize(vec3(-sin(n_bend), 0.0, cos(n_bend)));
+        transformedNormal = normalMatrix * bentObjectNormal;
+#ifdef FLIP_SIDED
+        transformedNormal = -transformedNormal;
+#endif
+        vNormal = normalize( transformedNormal );
+#ifdef USE_TANGENT
+        vTangent = normalize( transformedTangent );
+        vBitangent = normalize( cross( vNormal, vTangent ) * tangent.w );
+#endif
+#endif
+`;
+}
 
-  const frontTexture = usePageTexture(frontPage);
-  const backTexture = usePageTexture(backPage);
-
-  const geometry = useMemo(
-    () => new THREE.PlaneGeometry(pageWidth, bookHeight, SEGMENTS_X, SEGMENTS_Y),
-    [pageWidth, bookHeight]
-  );
-
-  const material = useMemo(() => {
-    const mat = new THREE.MeshBasicMaterial({
-      color: '#ffffff',
-      side: THREE.DoubleSide,
-    });
-
-    const pw = pageWidth;
-    const bh = bookHeight;
-
-    mat.onBeforeCompile = (shader) => {
-      shader.uniforms.uFold = { value: 0 };
-      shader.uniforms.uFrontMap = { value: null };
-      shader.uniforms.uBackMap = { value: null };
-      shader.uniforms.uHasFrontMap = { value: 0 };
-      shader.uniforms.uHasBackMap = { value: 0 };
-      mat.userData.shader = shader;
-
-      shader.vertexShader = 'uniform float uFold;\nvarying vec2 vPageUv;\n' + shader.vertexShader;
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <begin_vertex>',
-        `
-        #include <begin_vertex>
-
+function bendVertexBlock(pw: number, bh: number): string {
+  return `
         float xN = (position.x + ${(pw / 2).toFixed(6)}) / ${pw.toFixed(6)};
         float yN = (position.y + ${(bh / 2).toFixed(6)}) / ${bh.toFixed(6)};
+        float hingeWeight = smoothstep(0.0, 0.18, xN);
 
-        vPageUv = vec2(xN, yN);
-
-        float cornerDelay = yN * 0.25;
+        float cornerDelay = yN * 0.22;
         float localFold = clamp((uFold - cornerDelay) / max(1.0 - cornerDelay, 0.01), 0.0, 1.0);
 
-        float bend = localFold * 3.14159;
+        float bend = localFold * 3.14159265;
         float dist = position.x + ${(pw / 2).toFixed(6)};
 
         transformed.x = cos(bend) * dist - ${(pw / 2).toFixed(6)};
         transformed.z = sin(bend) * dist;
 
-        float curlStrength = 0.12 + 0.08 * (1.0 - yN);
-        float curlAmount = sin(bend) * curlStrength;
-        float curlWave = sin(xN * 3.14159);
-        transformed.z += curlAmount * curlWave;
+        float curlEnvelope = sin(localFold * 3.14159265);
+        float curlStrength = (0.088 + 0.058 * (1.0 - yN)) * (0.62 + 0.38 * curlEnvelope) * hingeWeight;
+        float curlWave = sin(xN * 3.14159265);
+        transformed.z += sin(bend) * curlStrength * curlWave;
 
-        float cornerLift = sin(localFold * 3.14159) * 0.05 * (1.0 - yN) * xN;
+        float cornerLift = curlEnvelope * 0.038 * (1.0 - yN) * xN * hingeWeight;
         transformed.z += cornerLift;
-        `
-      );
 
-      shader.fragmentShader =
-        'uniform sampler2D uFrontMap;\nuniform sampler2D uBackMap;\nuniform float uHasFrontMap;\nuniform float uHasBackMap;\nvarying vec2 vPageUv;\n' +
-        shader.fragmentShader;
+        float warpAmp = 0.0035 * curlEnvelope * hingeWeight;
+        float warpPhase = bend * 1.12 + xN * 21.0 + yN * 14.0;
+        transformed.z += warpAmp * sin(warpPhase);
+        transformed.y += warpAmp * 0.5 * sin(xN * 18.5 + yN * 10.5 + bend) * hingeWeight;
+`;
+}
 
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <color_fragment>',
-        `
-        #include <color_fragment>
-        vec2 fuv = vPageUv;
-        vec2 buv = vec2(1.0 - vPageUv.x, vPageUv.y);
+function createFoldMaterial(pw: number, bh: number, _backFace: boolean): THREE.MeshStandardMaterial {
+  const mat = new THREE.MeshStandardMaterial({
+    color: '#ffffff',
+    roughness: 0.91,
+    metalness: 0.02,
+    envMapIntensity: 0.95,
+    side: _backFace ? THREE.BackSide : THREE.FrontSide,
+  });
 
-        if (gl_FrontFacing) {
-          if (uHasFrontMap > 0.5) {
-            diffuseColor = texture2D(uFrontMap, fuv);
-          }
-        } else {
-          if (uHasBackMap > 0.5) {
-            diffuseColor = texture2D(uBackMap, buv);
-          }
-        }
-        `
-      );
-    };
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uFold = { value: 0 };
+    mat.userData.foldShader = shader;
 
+    shader.vertexShader = 'uniform float uFold;\n' + shader.vertexShader;
+
+    shader.vertexShader = shader.vertexShader.replace('#include <normal_vertex>', bentNormalFlowBlock(pw, bh));
+
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <begin_vertex>',
+      `
+        #include <begin_vertex>
+        ${bendVertexBlock(pw, bh)}
+        `,
+    );
+  };
+
+  return mat;
+}
+
+export function Flap({ bookWidth, bookHeight, frontPage, backPage, reactSpreadIndex }: FlapProps) {
+  const pageWidth = bookWidth / 2;
+  const { segmentsX, segmentsY } = useBookQuality();
+
+  const frontTexture = usePageTexture(frontPage);
+  const backTexture = usePageTexture(backPage);
+
+  const geometry = useMemo(
+    () => new THREE.PlaneGeometry(pageWidth, bookHeight, segmentsX, segmentsY),
+    [pageWidth, bookHeight, segmentsX, segmentsY],
+  );
+
+  const backMapAdjusted = useMemo(() => {
+    if (!backTexture) return null;
+    const t = backTexture.clone();
+    t.wrapS = THREE.ClampToEdgeWrapping;
+    t.wrapT = THREE.ClampToEdgeWrapping;
+    t.repeat.set(-1, 1);
+    t.offset.set(1, 0);
+    t.needsUpdate = true;
+    return t;
+  }, [backTexture]);
+
+  const isCoverBoth = !!(frontPage?.isCover || backPage?.isCover);
+
+  const frontMat = useMemo(() => {
+    const mat = createFoldMaterial(pageWidth, bookHeight, false);
+    mat.map = frontTexture ?? null;
+    mat.emissive = new THREE.Color(isCoverBoth ? '#221a14' : '#000000');
+    mat.emissiveIntensity = isCoverBoth ? 0.06 : 0;
+    mat.needsUpdate = true;
     return mat;
-  }, [pageWidth, bookHeight]);
+  }, [pageWidth, bookHeight, frontTexture, isCoverBoth]);
+
+  const backMat = useMemo(() => {
+    const mat = createFoldMaterial(pageWidth, bookHeight, true);
+    mat.map = backMapAdjusted ?? null;
+    mat.emissive = new THREE.Color(isCoverBoth ? '#221a14' : '#000000');
+    mat.emissiveIntensity = isCoverBoth ? 0.05 : 0;
+    mat.needsUpdate = true;
+    return mat;
+  }, [pageWidth, bookHeight, backMapAdjusted, isCoverBoth]);
 
   useFrame(() => {
     const store = useBookStore.getState();
-    const storeSpread = store.spreadIndex;
-    const shader = material.userData.shader;
-    if (!shader) return;
+    const storeSpread = store.displaySpreadIndex;
+    const prefersRM = store.prefersReducedMotion;
 
-    // Detect mismatch: store has advanced/retreated past what React has rendered
-    // Hold the fold position to prevent 1-frame texture pop
+    type FoldShader = { uniforms?: { uFold?: { value: number } } };
+    const frontShader = frontMat.userData.foldShader as FoldShader | undefined;
+    const backShader = backMat.userData.foldShader as FoldShader | undefined;
+
     let foldValue = store.foldProgress;
 
-    if (storeSpread > reactSpreadIndex) {
+    if (prefersRM) {
+      foldValue = 0;
+    } else if (storeSpread > reactSpreadIndex) {
       // Store moved forward but React hasn't re-rendered with new textures yet
-      // Keep flap locked fully turned (on the left) so old textures aren't visible
       foldValue = 1.0;
     } else if (storeSpread < reactSpreadIndex) {
       // Store moved backward but React still has the newer textures
-      // Keep flap locked flat (on the right) until React catches up
       foldValue = 0.0;
     }
 
-    shader.uniforms.uFold.value = foldValue;
-
-    if (frontTexture) {
-      shader.uniforms.uFrontMap.value = frontTexture;
-      shader.uniforms.uHasFrontMap.value = 1;
-    } else {
-      shader.uniforms.uHasFrontMap.value = 0;
+    if (frontShader?.uniforms?.uFold) {
+      // eslint-disable-next-line react-hooks/immutability -- uFold drives bend; must update every frame
+      frontShader.uniforms.uFold.value = foldValue;
     }
-    if (backTexture) {
-      shader.uniforms.uBackMap.value = backTexture;
-      shader.uniforms.uHasBackMap.value = 1;
-    } else {
-      shader.uniforms.uHasBackMap.value = 0;
+    if (backShader?.uniforms?.uFold) {
+      // eslint-disable-next-line react-hooks/immutability -- uFold drives bend; must update every frame
+      backShader.uniforms.uFold.value = foldValue;
     }
   });
 
   useEffect(() => {
     return () => {
-      material.dispose();
+      frontMat.dispose();
+      backMat.dispose();
+      backMapAdjusted?.dispose();
+      geometry.dispose();
     };
-  }, [material]);
+  }, [frontMat, backMat, backMapAdjusted, geometry]);
 
   const isCover = frontPage?.isCover || backPage?.isCover;
   const zPos = isCover ? 0.003 : 0.001;
 
+  const frontInspect = usePageImageInspectHandlers(frontPage, pageWidth, bookHeight, 'flapFront');
+  const backInspect = usePageImageInspectHandlers(backPage, pageWidth, bookHeight, 'flapBack');
+  const frontMeshRef = useRef<THREE.Mesh>(null);
+  const backMeshRef = useRef<THREE.Mesh>(null);
+
+  const showFrontInspect = pageHasInspectableImage(frontPage);
+  const showBackInspect = pageHasInspectableImage(backPage);
+
+  useLayoutEffect(() => {
+    const mesh = frontMeshRef.current;
+    if (!mesh) return;
+    if (showFrontInspect && frontPage) {
+      mesh.userData[INSPECT_PICK_USERDATA_KEY] = {
+        kind: 'flapFront',
+        page: frontPage,
+        pageWidth,
+        bookHeight,
+      };
+    } else {
+      delete mesh.userData[INSPECT_PICK_USERDATA_KEY];
+    }
+  }, [showFrontInspect, frontPage, pageWidth, bookHeight]);
+
+  useLayoutEffect(() => {
+    const mesh = backMeshRef.current;
+    if (!mesh) return;
+    if (showBackInspect && backPage) {
+      mesh.userData[INSPECT_PICK_USERDATA_KEY] = {
+        kind: 'flapBack',
+        page: backPage,
+        pageWidth,
+        bookHeight,
+      };
+    } else {
+      delete mesh.userData[INSPECT_PICK_USERDATA_KEY];
+    }
+  }, [showBackInspect, backPage, pageWidth, bookHeight]);
+
   if (frontPage?.isFormPage) return null;
 
   return (
-    <mesh
-      ref={meshRef}
-      geometry={geometry}
-      material={material}
-      position={[pageWidth / 2, 0, zPos]}
-    />
+    <group position={[pageWidth / 2, 0, zPos]}>
+      <mesh
+        ref={frontMeshRef}
+        geometry={geometry}
+        material={frontMat}
+        position={[0, 0, 0.00025]}
+        receiveShadow
+        onPointerMove={showFrontInspect ? frontInspect.onPointerMove : undefined}
+        onPointerOut={showFrontInspect ? frontInspect.onPointerOut : undefined}
+      />
+      {showFrontInspect && frontInspect.bounds && (
+        <group position={[0, 0, 0.00032]}>
+          <Html
+            center
+            position={frontInspect.hintPosition}
+            distanceFactor={5.5}
+            style={{ pointerEvents: 'none' }}
+            zIndexRange={[52, 0]}
+          >
+            <PageImageZoomHint active={frontInspect.showZoomHint} />
+          </Html>
+        </group>
+      )}
+      <mesh
+        ref={backMeshRef}
+        geometry={geometry}
+        material={backMat}
+        position={[0, 0, -0.00025]}
+        receiveShadow
+        onPointerMove={showBackInspect ? backInspect.onPointerMove : undefined}
+        onPointerOut={showBackInspect ? backInspect.onPointerOut : undefined}
+      />
+      {showBackInspect && backInspect.bounds && (
+        <group position={[0, 0, -0.00032]}>
+          <Html
+            center
+            position={backInspect.hintPosition}
+            distanceFactor={5.5}
+            style={{ pointerEvents: 'none' }}
+            zIndexRange={[51, 0]}
+          >
+            <PageImageZoomHint active={backInspect.showZoomHint} />
+          </Html>
+        </group>
+      )}
+    </group>
   );
 }

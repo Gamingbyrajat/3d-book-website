@@ -27,19 +27,19 @@ export function HeroSection() {
       }}
     >
       <div className="hero-content">
-        <p className="hero-eyebrow">Interactive Experience</p>
+        <p className="hero-eyebrow">Git Repository Management</p>
         <h1 className="hero-title">
-          Discover the Art
+          Park Your Repos.
           <br />
-          of <em>Digital Craft</em>
+          <em>Free Up Your Disk.</em>
         </h1>
         <p className="hero-description">
-          An immersive journey through design, typography, and visual storytelling.
-          Turn each page to explore ideas that shape the digital world.
+          The CLI tool that archives your git repositories securely to a private vault.
+          Restore them instantly when you need them back.
         </p>
         <div className="hero-actions">
           <button className="hero-cta" onClick={handleStart}>
-            Open the Book
+            Start Reading
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="hero-arrow">
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -47,11 +47,11 @@ export function HeroSection() {
           <span className="hero-hint">or scroll to begin</span>
         </div>
         <div className="hero-meta">
-          <span className="hero-meta-item">10 Pages</span>
+          <span className="hero-meta-item">macOS & Linux</span>
           <span className="hero-meta-dot" />
-          <span className="hero-meta-item">5 min read</span>
+          <span className="hero-meta-item">Node.js v18+</span>
           <span className="hero-meta-dot" />
-          <span className="hero-meta-item">Interactive</span>
+          <span className="hero-meta-item">AES-256-GCM</span>
         </div>
       </div>
     </div>

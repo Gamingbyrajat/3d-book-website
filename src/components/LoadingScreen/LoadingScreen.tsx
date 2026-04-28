@@ -1,12 +1,26 @@
-import { useBookStore } from '../../store';
-import './LoadingScreen.css';
+import { useBookStore } from "../../store";
+import "./LoadingScreen.css";
 
 const FLAVOR_TEXT = [
-  'Binding the pages\u2026',
-  'Inking the illustrations\u2026',
-  'Warming the light\u2026',
-  'Opening the cover\u2026',
+  "Initializing vault...",
+  "Encrypting connections...",
+  "Preparing commands...",
+  "Ready to park.",
 ];
+
+/** Decorative only; real commands mirror repo-parking CLI. */
+const TICKER_COMMANDS = [
+  "parking init",
+  "parking park my-app",
+  "parking list",
+  "parking status A",
+  "parking unpark my-app",
+  "parking change-password",
+  "parking recover",
+  "parking forget my-app",
+];
+
+const PAGE_COUNT = 5;
 
 function getFlavorText(progress: number): string {
   if (progress < 0.3) return FLAVOR_TEXT[0];
@@ -15,28 +29,36 @@ function getFlavorText(progress: number): string {
   return FLAVOR_TEXT[3];
 }
 
+function getPhase(progress: number): "phase-1" | "phase-2" | "phase-3" | "phase-4" {
+  if (progress < 0.3) return "phase-1";
+  if (progress < 0.7) return "phase-2";
+  if (progress < 0.95) return "phase-3";
+  return "phase-4";
+}
+
 export function LoadingScreen() {
   const isBooted = useBookStore((s) => s.isBooted);
   const bootProgress = useBookStore((s) => s.bootProgress);
 
   return (
-    <div
-      className={`loading-screen ${isBooted ? 'fade-out' : ''}`}
-      role="status"
-      aria-live="polite"
-    >
-      <div className="loading-content">
-        {/* SVG Book silhouette with page flutter */}
-        <div className="loading-book-icon">
-          <svg viewBox="0 0 80 100" className="book-silhouette">
-            <rect x="5" y="5" width="70" height="90" rx="3" fill="#FDFBF7" stroke="#c5bfb3" strokeWidth="1.5" />
-            <rect x="5" y="5" width="70" height="90" rx="3" fill="none" stroke="#2b303a" strokeWidth="0.5" opacity="0.3" />
-            <line x1="40" y1="8" x2="40" y2="92" stroke="#d4cfc5" strokeWidth="1" />
-          </svg>
-          <div className="flutter-page" />
+    <div className={`loading-screen ${isBooted ? "fade-out" : ""}`}>
+      <div className={`loading-content ${getPhase(bootProgress)}`}>
+        <div className="loading-book-stage" aria-hidden="true">
+          <div className="loading-book-perspective">
+            <div className="loading-book-board" />
+            <div className="loading-book-spine" />
+            <div className="loading-book-pages">
+              {Array.from({ length: PAGE_COUNT }, (_, i) => (
+                <div key={i} className={`loading-page loading-page--${i + 1}`} />
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="loading-brand">HEADING TEXT</div>
+        <div className="loading-brand-wrap">
+          <div className="loading-brand-kicker">Interactive Edition</div>
+          <div className="loading-brand">Repo Parking Package</div>
+        </div>
 
         <div className="loading-progress-track">
           <div
@@ -49,8 +71,35 @@ export function LoadingScreen() {
           />
         </div>
 
-        <div className="loading-flavor">{getFlavorText(bootProgress)}</div>
+        <p className="loading-flavor" key={getFlavorText(bootProgress)}>
+          {getFlavorText(bootProgress)}
+        </p>
+
+        <div className="loading-terminal" aria-hidden="true">
+          <div className="loading-terminal-viewport">
+            <div className="loading-terminal-track">
+              <div className="loading-terminal-segment">
+                {TICKER_COMMANDS.map((cmd) => (
+                  <span key={cmd} className="loading-terminal-cmd">
+                    {cmd}
+                  </span>
+                ))}
+              </div>
+              <div className="loading-terminal-segment" aria-hidden="true">
+                {TICKER_COMMANDS.map((cmd) => (
+                  <span key={`${cmd}-b`} className="loading-terminal-cmd">
+                    {cmd}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <span className="loading-sr-only" role="status" aria-live="polite" aria-atomic="true">
+        Loading interactive book experience.
+      </span>
     </div>
   );
 }

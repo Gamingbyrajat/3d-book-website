@@ -1,16 +1,20 @@
+import { useRef } from 'react';
+import * as THREE from 'three';
 import { useBookStore } from '../../store';
 import { pages, numSpreads } from '../../content/pages';
 import { Page } from './Page';
 import { Flap } from './Flap';
 import { Spine } from './Spine';
 import { BookEdge } from './BookEdge';
+import { BookInspectClickResolver } from './BookInspectClickResolver';
 
 const BOOK_WIDTH = 5.8;
 const BOOK_HEIGHT = 3.6;
 const SPINE_THICKNESS = 0.04;
 
 export function Book() {
-  const spreadIndex = useBookStore((s) => s.spreadIndex);
+  const spreadIndex = useBookStore((s) => s.displaySpreadIndex);
+  const bookRootRef = useRef<THREE.Group>(null);
 
   const idxLeftFlat = spreadIndex * 2 - 1;
   const idxFlapFront = spreadIndex * 2;
@@ -25,7 +29,8 @@ export function Book() {
   const isLastSpread = spreadIndex >= numSpreads - 1;
 
   return (
-    <group position={[0, isLastSpread ? -0.2 : -0.2, 0]}>
+    <group ref={bookRootRef} position={[0, isLastSpread ? -0.2 : -0.2, 0]}>
+      <BookInspectClickResolver rootRef={bookRootRef} />
       {/* Book edge — spine, back cover, page edges */}
       <BookEdge
         bookWidth={BOOK_WIDTH}

@@ -12,11 +12,10 @@ interface BookEdgeProps {
 const COVER_COLOR = '#1e2128';
 
 export function BookEdge({ bookWidth, bookHeight }: BookEdgeProps) {
-  const spreadIndex = useBookStore((s) => s.spreadIndex);
+  const spreadIndex = useBookStore((s) => s.displaySpreadIndex);
   const pageWidth = bookWidth / 2;
   const thickness = 0.08;
 
-  const isLastSpread = spreadIndex >= numSpreads - 1;
   const isSecondToLast = spreadIndex >= numSpreads - 2;
 
   const backCoverGeo = useMemo(

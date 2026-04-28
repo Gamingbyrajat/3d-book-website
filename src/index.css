@@ -37,6 +37,11 @@ body {
   pointer-events: none;
 }
 
+/* Belt-and-suspenders with Lenis.stop() while image inspect modal is open */
+.scroll-spacer.scroll-spacer--inspect-lock {
+  pointer-events: none;
+}
+
 /* ===== NAVBAR ===== */
 .navbar {
   position: fixed;
@@ -86,6 +91,24 @@ body {
 }
 
 /* Text is now rendered as 3D mesh textures — no CSS overlay needed */
+
+.book-canvas-host {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.book-canvas-host--warmup {
+  visibility: hidden;
+  opacity: 0;
+  z-index: 0;
+}
+
+.book-canvas-host--live {
+  visibility: visible;
+  opacity: 1;
+}
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {

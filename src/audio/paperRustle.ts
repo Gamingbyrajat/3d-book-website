@@ -1,4 +1,6 @@
-const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+const AudioCtx =
+  window.AudioContext ||
+  (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 let audioCtx: AudioContext | null = null;
 let gainNode: GainNode | null = null;
 let filterNode: BiquadFilterNode | null = null;
@@ -16,6 +18,7 @@ function createNoiseBuffer(ctx: AudioContext): AudioBuffer {
 
 export function initAudio() {
   if (initialized) return;
+  if (!AudioCtx) return;
   initialized = true;
 
   audioCtx = new AudioCtx();
