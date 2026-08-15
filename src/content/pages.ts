@@ -113,8 +113,15 @@ export const pages: Page[] = [
 export const numSpreads = Math.ceil(pages.length / 2);
 
 export const routeToSpread: Record<string, number> = {};
+export const routeToPageIndex: Record<string, number> = {};
 pages.forEach((page, idx) => {
   if (page.route) {
     routeToSpread[page.route] = Math.floor(idx / 2);
+    routeToPageIndex[page.route] = idx;
   }
 });
+
+export function findRouteForPageIndex(pageIndex: number): string | null {
+  const page = pages[pageIndex];
+  return page?.route ?? null;
+}

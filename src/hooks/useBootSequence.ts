@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useBookStore } from '../store';
 import { preRenderAllTextures } from './usePageTexture';
+import { isMobilePortraitViewport } from './useViewportMode';
 
 const MIN_DISPLAY_MS = 1800;
 const WARMUP_TIMEOUT_MS = 8000;
@@ -21,6 +22,21 @@ export function useBootSequence() {
       store.setShaderWarmed(false);
       store.setGpuWarmupStarted(false);
       store.setBootProgress(0.1);
+
+      if (isMobilePortraitViewport()) {
+        store.setBootProgress(0.72);
+        await document.fonts.ready;
+        store.setBootProgress(1.0);
+
+        const elapsed = performance.now() - startTime;
+        const remaining = MIN_DISPLAY_MS - elapsed;
+        if (remaining > 0) {
+          await new Promise((r) => setTimeout(r, remaining));
+        }
+
+        store.setBooted(true);
+        return;
+      }
 
       store.setBootProgress(0.3);
       await preRenderAllTextures();

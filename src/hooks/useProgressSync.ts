@@ -29,7 +29,7 @@ function discreteSpreadFromProgress(progress: number, prefersReducedMotion: bool
   return Math.floor(clamped);
 }
 
-export function useProgressSync() {
+export function useProgressSync(enabled = true) {
   const location = useLocation();
   const navigate = useNavigate();
   const isBooted = useBookStore((s) => s.isBooted);
@@ -37,6 +37,8 @@ export function useProgressSync() {
   const resumeDone = useRef(false);
 
   useEffect(() => {
+    if (!enabled) return;
+
     const handler = (e: { scroll: number; velocity: number }) => {
       const progress = e.scroll / window.innerHeight;
       useBookStore.getState().setProgress(progress);
@@ -52,7 +54,7 @@ export function useProgressSync() {
       lenis.off('scroll', handler);
       if (persistTimer.current) clearTimeout(persistTimer.current);
     };
-  }, []);
+  }, [enabled]);
 
   const scrollToSpread = useCallback((target: number, opts?: { immediate?: boolean }) => {
     const targetPx = target * window.innerHeight;
@@ -67,6 +69,7 @@ export function useProgressSync() {
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
     if (!isBooted || resumeDone.current) return;
     resumeDone.current = true;
 
@@ -94,9 +97,10 @@ export function useProgressSync() {
         scrollToSpread(clamped, { immediate: true });
       }
     });
-  }, [isBooted, location.pathname, navigate, scrollToSpread]);
+  }, [enabled, isBooted, location.pathname, navigate, scrollToSpread]);
 
   useEffect(() => {
+    if (!enabled) return;
     const targetSpread = routeToSpread[location.pathname];
     if (targetSpread === undefined) return;
 
@@ -106,9 +110,11 @@ export function useProgressSync() {
     const delay = useBookStore.getState().isBooted ? 50 : 2500;
     const timer = setTimeout(() => scrollToSpread(targetSpread), delay);
     return () => clearTimeout(timer);
-  }, [location.pathname, scrollToSpread]);
+  }, [enabled, location.pathname, scrollToSpread]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
 
@@ -143,5 +149,5 @@ export function useProgressSync() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigate, scrollToSpread]);
+  }, [enabled, navigate, scrollToSpread]);
 }

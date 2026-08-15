@@ -8,17 +8,35 @@ import { HeroSection } from './components/HeroSection/HeroSection';
 import { ContactForm } from './components/ContactForm/ContactForm';
 import { BookProgressIndicator, SpreadNavTapZones } from './components/BookChrome/BookChrome';
 import { ImageInspectModal } from './components/ImageInspect/ImageInspectModal';
+import { MobileReader } from './components/MobileReader/MobileReader';
 import { useProgressSync } from './hooks/useProgressSync';
 import { useBootSequence } from './hooks/useBootSequence';
+import { useViewportMode } from './hooks/useViewportMode';
+import { preRenderAllTextures } from './hooks/usePageTexture';
 import { useBookStore } from './store';
 import { numSpreads } from './content/pages';
 import { setLenisSmoothWheel } from './lenis';
 
 function BookApp() {
-  useProgressSync();
+  const { isMobilePortrait } = useViewportMode();
+  useProgressSync(!isMobilePortrait);
   const isBooted = useBookStore((s) => s.isBooted);
   const gpuWarmupStarted = useBookStore((s) => s.gpuWarmupStarted);
   const imageInspectOpen = useBookStore((s) => s.imageInspect.open);
+
+  useEffect(() => {
+    if (isMobilePortrait || !isBooted || gpuWarmupStarted) return;
+
+    let cancelled = false;
+    preRenderAllTextures().then(() => {
+      if (cancelled) return;
+      useBookStore.getState().setGpuWarmupStarted(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gpuWarmupStarted, isBooted, isMobilePortrait]);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -31,6 +49,15 @@ function BookApp() {
     mq.addEventListener('change', apply);
     return () => mq.removeEventListener('change', apply);
   }, []);
+
+  if (isMobilePortrait) {
+    return (
+      <>
+        {isBooted && <MobileReader />}
+        {isBooted && <ImageInspectModal />}
+      </>
+    );
+  }
 
   return (
     <>
@@ -61,6 +88,12 @@ function BookApp() {
       {isBooted && <ContactForm />}
 
       {isBooted && <ImageInspectModal />}
+
+      {isBooted && !gpuWarmupStarted && (
+        <div className="book-mode-loading" role="status" aria-live="polite">
+          Preparing 3D book...
+        </div>
+      )}
     </>
   );
 }
