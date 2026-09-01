@@ -17,6 +17,7 @@ export function BookProgressIndicator() {
 
   return (
     <div className="book-progress-indicator" aria-hidden="true">
+      <span className="book-progress-test-label">Test branch</span>
       <span className="book-progress-label">Spread</span>
       <span className="book-progress-current">{displaySpread + 1}</span>
       <span className="book-progress-of">of</span>

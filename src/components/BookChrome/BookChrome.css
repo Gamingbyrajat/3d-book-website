@@ -20,6 +20,11 @@
   font-weight: 400;
 }
 
+.book-progress-test-label {
+  color: rgba(168, 73, 45, 0.74);
+  font-weight: 700;
+}
+
 .book-progress-current {
   font-family: 'Playfair Display', serif;
   font-size: 1.05rem;
